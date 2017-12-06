@@ -1,0 +1,3 @@
+Call Me Maybe is application that will use Ethereum smart contracts - so people can get paid by callers on a per/minute basis, and calls can be kept anonymous.  
+
+Nobody will need to expose their actual phone numbers to the internet -- this application will give users a "masked number" that forwards to their phone, and only phone numbers registered in Call Me Maybe, and with enough Ethereum in their wallet, will get forwarded through.
