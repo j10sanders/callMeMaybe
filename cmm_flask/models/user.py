@@ -1,5 +1,5 @@
-from airtng_flask.models import app_db
-# from airtng_flask.models import bcrypt
+from cmm_flask.models import app_db
+# from cmm_flask.models import bcrypt
 
 db = app_db()
 # bcrypt = bcrypt()
@@ -15,8 +15,8 @@ class User(db.Model):
     phone_number = db.Column(db.String, nullable=False)
     area_code = db.Column(db.String, nullable=False)
 
-    reservations = db.relationship("Reservation", back_populates="guest")
-    vacation_properties = db.relationship("VacationProperty", back_populates="host")
+    conversations = db.relationship("Conversation", back_populates="guest")
+    discussion_profiles = db.relationship("DiscussionProfile", back_populates="host")
 
     def __init__(self, name, email, password, phone_number, area_code):
         self.name = name

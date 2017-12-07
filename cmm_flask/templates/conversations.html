@@ -14,21 +14,21 @@
 
 <div class="container">
     <div class="row">
-        {% from "_reservationlist.html" import render_reservation_list %}
+        {% from "_conversationlist.html" import render_conversation_list %}
 
-        {% if reservations_as_host|length > 0 %}
+        {% if conversations_as_host|length > 0 %}
         <h2> Your current profiles </h2>
-        {{ render_reservation_list(reservations_as_host) }}
+        {{ render_conversation_list(conversations_as_host) }}
         {% endif %}
 
         </hr>
 
-        {% if reservations_as_guest|length > 0 %}
+        {% if conversations_as_guest|length > 0 %}
         <h2> Numbers you can call </h2>
-        {{ render_reservation_list(reservations_as_guest) }}
+        {{ render_conversation_list(conversations_as_guest) }}
         {% endif %}
 
-        {% if reservations_as_guest|length == 0 and reservations_as_host|length == 0 %}
+        {% if conversations_as_guest|length == 0 and conversations_as_host|length == 0 %}
         <h2> You are not involved in any conversations </h2>
         {% endif %}
     </div>

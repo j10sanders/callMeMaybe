@@ -1,4 +1,4 @@
-{% macro render_reservation_list(reservations) %}
+{% macro render_conversation_list(conversations) %}
 
 <table class="table table-striped">
     <thead>
@@ -10,7 +10,7 @@
     </tr>
     </thead>
     <tbody>
-    {% for res in reservations %}
+    {% for res in conversations %}
     <tr>
         <th scope="row"> {{loop.index}}</th>
         <td>{{res.guest.name}}</td>

@@ -1,6 +1,6 @@
 from flask.ext.testing import TestCase
 
-from airtng_flask import app
+from cmm_flask import app
 
 
 class BaseTestCase(TestCase):

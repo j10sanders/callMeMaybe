@@ -1,5 +1,5 @@
 import os
-from airtng_flask.config import config_env_files
+from cmm_flask.config import config_env_files
 from flask import Flask
 
 from flask.ext.bcrypt import Bcrypt
@@ -28,4 +28,4 @@ def config_app(config_name, new_app):
 
 app = create_app()
 
-import airtng_flask.views
+import cmm_flask.views

@@ -1,12 +1,12 @@
-body.property-page footer {
+body.discussion-page footer {
     position: relative;
 }
 
-body.property-page #main {
+body.discussion-page #main {
     min-height: 900px;
 }
 
-.property {
+.discussion {
     display: block;
     position: relative;
     border-radius: 10px;
@@ -18,7 +18,7 @@ body.property-page #main {
     margin-bottom: 20px;
 }
 
-.property img {
+.discussion img {
     vertical-align: middle;
     width: 100%;
     position: absolute;
@@ -27,23 +27,23 @@ body.property-page #main {
     border-radius: 10px;
 }
 
-.property h2 {
+.discussion h2 {
     color: white;
     z-index: 1000;
     position: relative;
 }
 
-.property-detail {
+.discussion-detail {
     position: absolute;
     top: 0px;
     width: 100%;
 }
 
-.property-detail .overview {
+.discussion-detail .overview {
     height: 400px;
     overflow: hidden;
 }
 
-.property-detail img {
+.discussion-detail img {
     width: 100%;
 }

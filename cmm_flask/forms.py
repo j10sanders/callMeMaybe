@@ -40,7 +40,7 @@ class LoginForm(Form):
     )
 
 
-class VacationPropertyForm(Form):
+class DiscussionProfileForm(Form):
     description = TextField(
             'Description:',
             validators=[DataRequired("Description is required")]
@@ -51,16 +51,16 @@ class VacationPropertyForm(Form):
     )
 
 
-class ReservationForm(Form):
+class ConversationForm(Form):
     message = TextField(
             'Message:',
             validators=[DataRequired("Message is required")]
     )
 
-    property_id = HiddenField()
+    discussion_id = HiddenField()
 
 
-class ReservationConfirmationForm(Form):
+class ConversationConfirmationForm(Form):
     From = TextField('From')
     Body = TextField('Body')
 

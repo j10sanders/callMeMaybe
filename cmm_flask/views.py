@@ -1,20 +1,20 @@
-from airtng_flask import db, bcrypt, app, login_manager
+from cmm_flask import db, bcrypt, app, login_manager
 from flask import session, g, request, flash, Blueprint
 from flask.ext.login import login_user, logout_user, current_user, login_required
 import twilio.twiml
 from twilio.twiml.messaging_response import Message, MessagingResponse
 from twilio.twiml.voice_response import Dial, Number, VoiceResponse
 
-from airtng_flask.forms import RegisterForm, LoginForm, VacationPropertyForm, ReservationForm, \
-    ReservationConfirmationForm, ExchangeForm
-from airtng_flask.view_helpers import twiml, view, redirect_to, view_with_params
-from airtng_flask.models import init_models_module
+from cmm_flask.forms import RegisterForm, LoginForm, DiscussionProfileForm, ConversationForm, \
+    ConversationConfirmationForm, ExchangeForm
+from cmm_flask.view_helpers import twiml, view, redirect_to, view_with_params
+from cmm_flask.models import init_models_module
 
 init_models_module(db, bcrypt, app)
 
-from airtng_flask.models.user import User
-from airtng_flask.models.vacation_property import VacationProperty
-from airtng_flask.models.reservation import Reservation
+from cmm_flask.models.user import User
+from cmm_flask.models.discussion_profile import DiscussionProfile
+from cmm_flask.models.conversation import Conversation
 from werkzeug.security import check_password_hash, generate_password_hash
 from werkzeug.exceptions import Forbidden
 import pdb
@@ -79,98 +79,97 @@ def home():
     return view('home')
 
 
-@app.route('/properties', methods=["GET"])
+@app.route('/discussions', methods=["GET"])
 @login_required
-def properties():
-    vacation_properties = VacationProperty.query.all()
-    return view_with_params('properties', vacation_properties=vacation_properties)
+def discussions():
+    discussion_profiles = DiscussionProfile.query.all()
+    return view_with_params('discussions', discussion_profiles=discussion_profiles)
 
 
-@app.route('/properties/new', methods=["GET", "POST"])
+@app.route('/discussions/new', methods=["GET", "POST"])
 @login_required
-def new_property():
-    form = VacationPropertyForm()
+def new_discussion():
+    form = DiscussionProfileForm()
     if request.method == 'POST':
         if form.validate_on_submit():
             host = User.query.get(current_user.get_id())
-            pdb.set_trace()
-            # anonymous_phone_number = VacationProperty.buy_number() #missing required self.
-            property = VacationProperty(form.description.data, form.image_url.data, host) #need to push an anon phone # here.
-            property.anonymous_phone_number = property.buy_number().phone_number
-            db.session.add(property)
+            # anonymous_phone_number = DiscussionProfile.buy_number() #missing required self.
+            discussion = DiscussionProfile(form.description.data, form.image_url.data, host) #need to push an anon phone # here.
+            discussion.anonymous_phone_number = discussion.buy_number().phone_number
+            db.session.add(discussion)
             db.session.commit()
-            return redirect_to('properties')
+            return redirect_to('discussions')
 
-    return view('property_new', form)
+    return view('discussion_new', form)
 
 
-@app.route('/reservations/', methods=["POST"], defaults={'property_id': None})
-@app.route('/reservations/<property_id>', methods=["GET", "POST"])
+@app.route('/conversations/', methods=["POST"], defaults={'discussion_id': None})
+@app.route('/conversations/<discussion_id>', methods=["GET", "POST"])
 @login_required
-def new_reservation(property_id):
-    vacation_property = None
-    form = ReservationForm()
-    form.property_id.data = property_id
+def new_conversation(discussion_id):
+    discussion_profile = None
+    form = ConversationForm()
+    form.discussion_id.data = discussion_id
 
     if request.method == 'POST':
         if form.validate_on_submit():
             guest = User.query.get(current_user.get_id())
 
-            vacation_property = VacationProperty.query.get(form.property_id.data)
-            reservation = Reservation(form.message.data, vacation_property, guest)
-            db.session.add(reservation)
+            discussion_profile = DiscussionProfile.query.get(form.discussion_id.data)
+            conversation = Conversation(form.message.data, discussion_profile, guest)
+            db.session.add(conversation)
             db.session.commit()
 
-            reservation.notify_host()
+            conversation.notify_host()
 
-            return redirect_to('properties')
+            return redirect_to('discussions')
 
-    if property_id is not None:
-        vacation_property = VacationProperty.query.get(property_id)
+    if discussion_id is not None:
+        discussion_profile = DiscussionProfile.query.get(discussion_id)
 
-    return view_with_params('reservation', vacation_property=vacation_property, form=form)
+    return view_with_params('conversation', discussion_profile=discussion_profile, form=form)
 
 
-@app.route('/reservations', methods=["GET"])
+@app.route('/conversations', methods=["GET"])
 @login_required
-def reservations():
+def conversations():
     user = User.query.get(current_user.get_id())
-    reservations_as_host = Reservation.query \
-        .filter(VacationProperty.host_id == current_user.get_id() and len(VacationProperty.reservations) > 0) \
-        .join(VacationProperty) \
-        .filter(Reservation.vacation_property_id == VacationProperty.id) \
+    conversations_as_host = Conversation.query \
+        .filter(DiscussionProfile.host_id == current_user.get_id() and len(DiscussionProfile.conversations) > 0) \
+        .join(DiscussionProfile) \
+        .filter(Conversation.discussion_profile_id == DiscussionProfile.id) \
         .all()
 
-    reservations_as_guest = user.reservations
+    conversations_as_guest = user.conversations
 
-    return view_with_params('reservations',
-                            reservations_as_guest=reservations_as_guest,
-                            reservations_as_host=reservations_as_host)
+    return view_with_params('conversations',
+                            conversations_as_guest=conversations_as_guest,
+                            conversations_as_host=conversations_as_host)
 
 
-@app.route('/reservations/confirm', methods=["POST"])
-def confirm_reservation():
-    form = ReservationConfirmationForm()
-    sms_response_text = "Sorry, it looks like you don't have any reservations to respond to."
+@app.route('/conversations/confirm', methods=["POST"])
+def confirm_conversation():
+    form = ConversationConfirmationForm()
+    sms_response_text = "Sorry, it looks like you don't have any conversations to respond to."
     user = User.query.filter(User.phone_number == form.From.data).first()
-    reservation = Reservation \
+    conversation = Conversation \
         .query \
-        .filter(Reservation.status == 'pending'
-                and Reservation.vacation_property.host.id == user.id) \
+        .filter(Conversation.status == 'pending'
+                and Conversation.discussion_profile.host.id == user.id) \
         .first()
     print("mayube it is none")
-    if reservation is not None:
+    if conversation is not None:
         if 'yes' in form.Body.data or 'accept' in form.Body.data or 'Accept' in form.Body.data:
-            reservation.confirm()
-            if reservation.vacation_property.anonymous_phone_number is not None:
+            conversation.confirm()
+            if conversation.discussion_profile.anonymous_phone_number is not None:
                 print("about to buy.  I bet this is the issue")
-                reservation.vacation_property.buy_number(user.area_code)
+                conversation.discussion_profile.buy_number(user.area_code)
                 print('nevermind')
         else:
-            reservation.reject()
+            conversation.reject()
         db.session.commit()
-        sms_response_text = "You have successfully {0} the reservation".format(reservation.status)
-        reservation.notify_guest()
+        sms_response_text = "You have successfully {0} the conversation".format(conversation.status)
+        conversation.notify_guest()
     return twiml(_respond_message(sms_response_text))
 
 
@@ -221,14 +220,14 @@ def load_user(id):
 
 
 def _gather_outgoing_phone_number(incoming_phone_number, anonymous_phone_number):
-    vacay = Reservation.query \
-        .filter(Reservation.vacation_property.anonymous_phone_number == anonymous_phone_number) \
+    vacay = Conversation.query \
+        .filter(Conversation.discussion_profile.anonymous_phone_number == anonymous_phone_number) \
         .first()
     print(vacay) # None
-    if reservation.guest.phone_number == incoming_phone_number:
-        return reservation.vacation_property.host.phone_number
+    if conversation.guest.phone_number == incoming_phone_number:
+        return conversation.discussion_profile.host.phone_number
 
-    return reservation.guest.phone_number
+    return conversation.guest.phone_number
 
 
 def _respond_message(message):

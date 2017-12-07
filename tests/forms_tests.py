@@ -1,4 +1,4 @@
-from airtng_flask.forms import LoginForm, RegisterForm, VacationPropertyForm, ExchangeForm
+from cmm_flask.forms import LoginForm, RegisterForm, DiscussionProfileForm, ExchangeForm
 from tests.base import BaseTestCase
 
 
@@ -26,13 +26,13 @@ class FormTests(BaseTestCase):
 
         assert form.validate() is False
 
-    def test_populate_vacation_property_form_with_missing_params_should_be_ok(self):
-        form = VacationPropertyForm(description='description')
+    def test_populate_discussion_profile_form_with_missing_params_should_be_ok(self):
+        form = DiscussionProfileForm(description='description')
 
         assert form.validate() is False
 
-    def test_populate_vacation_property_form_with_badformed_url_params_should_produce_error(self):
-        form = VacationPropertyForm(description='description', image_url='image.png')
+    def test_populate_discussion_profile_form_with_badformed_url_params_should_produce_error(self):
+        form = DiscussionProfileForm(description='description', image_url='image.png')
 
         assert form.validate() is False
         assert 'Invalid Image Url' in form.image_url.errors

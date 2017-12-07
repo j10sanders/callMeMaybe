@@ -1,7 +1,7 @@
 from flask.ext.script import Manager
 from flask.ext.migrate import Migrate, MigrateCommand
 
-from airtng_flask import app, db
+from cmm_flask import app, db
 
 migrate = Migrate(app, db)
 

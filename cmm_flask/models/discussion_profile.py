@@ -1,19 +1,19 @@
-from airtng_flask.models import app_db, auth_token, account_sid, phone_number, application_sid
+from cmm_flask.models import app_db, auth_token, account_sid, phone_number, application_sid
 from twilio.rest import Client
 
 db = app_db()
 
 
-class VacationProperty(db.Model):
-    __tablename__ = "vacation_properties"
+class DiscussionProfile(db.Model):
+    __tablename__ = "discussion_profiles"
 
     id = db.Column(db.Integer, primary_key=True)
     description = db.Column(db.String, nullable=False)
     image_url = db.Column(db.String, nullable=False)
 
     host_id = db.Column(db.Integer, db.ForeignKey('users.id'))
-    host = db.relationship("User", back_populates="vacation_properties")
-    reservations = db.relationship("Reservation", back_populates="vacation_property")
+    host = db.relationship("User", back_populates="discussion_profiles")
+    conversations = db.relationship("Conversation", back_populates="discussion_profile", passive_deletes=True)
 
     anonymous_phone_number = db.Column(db.String, nullable=True)
 
@@ -23,7 +23,7 @@ class VacationProperty(db.Model):
         self.host = host
 
     def __repr__(self):
-        return '<VacationProperty {0} {1}>'.format(self.id, self.description)
+        return '<DiscussionProfile {0} {1}>'.format(self.id, self.description)
 
     def buy_number(self, area_code=814):
         numbers = self._get_twilio_client().available_phone_numbers("US") \
