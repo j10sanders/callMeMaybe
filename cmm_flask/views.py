@@ -33,7 +33,6 @@ def register():
             user = User(
                     name=form.name.data,
                     email=form.email.data,
-                    # password=form.password.data,
                     password=generate_password_hash(form.password.data),
                     phone_number="+{0}{1}".format(form.country_code.data, form.phone_number.data),
                     area_code=str(form.phone_number.data)[0:3])
