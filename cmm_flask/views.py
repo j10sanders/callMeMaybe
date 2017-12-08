@@ -102,6 +102,23 @@ def new_discussion():
 
     return view('discussion_new', form)
 
+@app.route('/discussions/test_new', methods=["GET", "POST"])
+@login_required
+def test_new_discussion():
+    form = DiscussionProfileForm()
+    if request.method == 'POST':
+        if form.validate_on_submit():
+            host = User.query.get(current_user.get_id())
+            pdb.set_trace()
+            # anonymous_phone_number = DiscussionProfile.buy_number() #missing required self.
+            discussion = DiscussionProfile(form.description.data, form.image_url.data, host) #need to push an anon phone # here.
+            discussion.anonymous_phone_number = discussion.test_buy_number()
+            db.session.add(discussion)
+            db.session.commit()
+            return redirect_to('discussions')
+
+    return view('discussion_new', form)
+
 
 @app.route('/conversations/', methods=["POST"], defaults={'discussion_id': None})
 @app.route('/conversations/<discussion_id>', methods=["GET", "POST"])
@@ -161,7 +178,7 @@ def confirm_conversation():
     if conversation is not None:
         if 'yes' in form.Body.data or 'accept' in form.Body.data or 'Accept' in form.Body.data:
             conversation.confirm()
-            if conversation.discussion_profile.anonymous_phone_number is not None:
+            if conversation.discussion_profile.anonymous_phone_number is None:
                 print("about to buy.  I bet this is the issue")
                 conversation.discussion_profile.buy_number(user.area_code)
                 print('nevermind')

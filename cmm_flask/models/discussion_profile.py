@@ -1,5 +1,6 @@
 from cmm_flask.models import app_db, auth_token, account_sid, phone_number, application_sid
 from twilio.rest import Client
+import pdb
 
 db = app_db()
 
@@ -25,7 +26,7 @@ class DiscussionProfile(db.Model):
     def __repr__(self):
         return '<DiscussionProfile {0} {1}>'.format(self.id, self.description)
 
-    def buy_number(self, area_code=814):
+    def buy_number(self, area_code):
         numbers = self._get_twilio_client().available_phone_numbers("US") \
                                            .local \
                                            .list(area_code=area_code,
@@ -43,7 +44,25 @@ class DiscussionProfile(db.Model):
             if numbers:
                 number = self._purchase_number(numbers[0])
                 self.anonymous_phone_number = number.phone_number
-                return number.phone_number
+                return number
+
+        return None
+
+    def test_buy_number(self, area_code=814):
+        numbers = self._get_twilio_client().available_phone_numbers("US") \
+                                           .local \
+                                           .list(area_code=area_code,
+                                                 sms_enabled=True,
+                                                 voice_enabled=True)
+        pdb.set_trace()
+        if numbers:
+            number=numbers[0].phone_number
+            self.anonymous_phone_number = number
+            return number
+        else:
+            number = +18148385175
+            self.anonymous_phone_number = number
+            return number
 
         return None
 
