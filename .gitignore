@@ -63,4 +63,4 @@ target/
 /venv
 
 #config
-config.py
+config.py.env
