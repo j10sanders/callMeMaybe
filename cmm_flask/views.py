@@ -17,7 +17,6 @@ from cmm_flask.models.discussion_profile import DiscussionProfile
 from cmm_flask.models.conversation import Conversation
 from werkzeug.security import check_password_hash, generate_password_hash
 from werkzeug.exceptions import Forbidden
-import pdb
 
 @app.route('/', methods=["GET", "POST"])
 @app.route('/register', methods=["GET", "POST"])
