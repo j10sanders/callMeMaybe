@@ -1,5 +1,5 @@
 import os
-from cmm_flask.config import config_env_files
+#from cmm_flask.config import config_env_files
 from flask import Flask
 from dotenv import load_dotenv
 from flask.ext.bcrypt import Bcrypt
@@ -23,8 +23,8 @@ def create_app(config_name='development', p_db=db, p_bcrypt=bcrypt, p_login_mana
 
 
 def config_app(config_name, new_app):
-    #new_app.config.from_object(config_env_files[config_name])
-    APP_ROOT = os.path.join(os.path.dirname(__file__), '..')   # refers to application_top
+	#new_app.config.from_object(config_env_files[config_name])
+	APP_ROOT = os.path.join(os.path.dirname(__file__), '..')   # refers to application_top
 	dotenv_path = os.path.join(APP_ROOT, '.env')
 	load_dotenv(dotenv_path)
 
