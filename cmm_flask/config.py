@@ -9,7 +9,6 @@ class DefaultConfig(object):
     dotenv_path = os.path.join(APP_ROOT, '.env')
     load_dotenv(dotenv_path)
     TWILIO_ACCOUNT_SID = os.environ.get("TWILIO_ACCOUNT_SID")
-    print(TWILIO_ACCOUNT_SID, "DHIASOUDHASUIDHASDUIHASDLIUASDAS")
     TWILIO_AUTH_TOKEN = os.environ.get("TWILIO_AUTH_TOKEN")
     TWILIO_NUMBER =  os.environ.get("TWILIO_NUMBER")
     APPLICATION_SID = os.environ.get("APPLICATION_SID")
