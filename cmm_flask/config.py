@@ -12,8 +12,8 @@ class DefaultConfig(object):
     TWILIO_AUTH_TOKEN = os.environ.get("TWILIO_AUTH_TOKEN")
     TWILIO_NUMBER =  os.environ.get("TWILIO_NUMBER")
     APPLICATION_SID = os.environ.get("APPLICATION_SID")
-    SQLALCHEMY_DATABASE_URI = os.environ.get("DATABASE_URL")
-    SECRET_KEY = os.environ.get("SECRET_KEY")
+    SQLALCHEMY_DATABASE_URI =  os.environ["DATABASE_URL"]
+    SECRET_KEY = os.environ.get("SECRET_KEY", os.urandom(12))
 
 class DevelopmentConfig(DefaultConfig):
     DEBUG = True
