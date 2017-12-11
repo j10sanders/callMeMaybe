@@ -23,13 +23,11 @@ def create_app(config_name='development', p_db=db, p_bcrypt=bcrypt, p_login_mana
 
 
 def config_app(config_name, new_app):
-    # is_prod = os.environ.get('IS_HEROKU', None)
+    is_prod = os.environ.get('IS_HEROKU', None)
 
-    # if is_prod:
-    #     print("IM PROPSDDDDDDDDDDDDDDDDDDDD")
-    #     config_name = 'heroku'
+    if is_prod:
+        config_name = 'heroku'
     
-    # print(config_name)
     new_app.config.from_object(config_env_files[config_name])
 
 

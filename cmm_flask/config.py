@@ -19,6 +19,10 @@ class DevelopmentConfig(DefaultConfig):
     DEBUG = True
     SQLALCHEMY_DATABASE_URI = 'postgresql://postgres:password@localhost/conversation'
 
+class HerokuConfig(DefaultConfig):
+    DEBUG = True
+    # SQLALCHEMY_DATABASE_URI = 'postgresql://postgres:password@localhost/conversation'
+
 
 class TestConfig(DefaultConfig):
     SQLALCHEMY_DATABASE_URI = 'postgresql://postgres:password@localhost/conversation'
@@ -32,4 +36,5 @@ class TestConfig(DefaultConfig):
 config_env_files = {
     'test': 'cmm_flask.config.TestConfig',
     'development': 'cmm_flask.config.DevelopmentConfig',
+    'heroku': 'cmm_flask.config.HerokuConfig',
 }
