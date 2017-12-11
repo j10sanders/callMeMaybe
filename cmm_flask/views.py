@@ -107,7 +107,6 @@ def test_new_discussion():
     if request.method == 'POST':
         if form.validate_on_submit():
             host = User.query.get(current_user.get_id())
-            pdb.set_trace()
             # anonymous_phone_number = DiscussionProfile.buy_number() #missing required self.
             discussion = DiscussionProfile(form.description.data, form.image_url.data, host) #need to push an anon phone # here.
             discussion.anonymous_phone_number = discussion.test_buy_number()

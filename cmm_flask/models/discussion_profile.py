@@ -54,7 +54,6 @@ class DiscussionProfile(db.Model):
                                            .list(area_code=area_code,
                                                  sms_enabled=True,
                                                  voice_enabled=True)
-        pdb.set_trace()
         if numbers:
             number=numbers[0].phone_number
             self.anonymous_phone_number = number
