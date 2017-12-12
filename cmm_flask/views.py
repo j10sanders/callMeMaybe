@@ -28,6 +28,9 @@ def register():
             if User.query.filter(User.email == form.email.data).count() > 0:
                 form.email.errors.append("Email address already in use.")
                 return view('register', form)
+            elif User.query.filter(User.phone_number == form.phone_number).count() > 0:
+                form.email.errors.append("Phone number already in use.")
+                return view('register', form)
 
             user = User(
                     name=form.name.data,
