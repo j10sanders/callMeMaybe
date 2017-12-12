@@ -6,7 +6,7 @@ body.cover footer {
 }
 
 .hero-text {
-    background: url(/static/images/masked-robber-on-phone.jpg);
+    background: url(/static/images/lines_texture.jpg);
     margin: 0px;
     top: 0px;
     text-align: center;
@@ -52,7 +52,7 @@ body.cover footer {
 }
 
 .navbar.navbar-space {
-    background: url(/static/images/masked-robber-on-phone.jpg);
+    background: url(/static/images/lines_texture.jpg);
     height: 90px;
 }
 
