@@ -2,9 +2,9 @@ from cmm_flask import db, bcrypt, app, login_manager
 from flask import session, g, request, flash, Blueprint
 from flask.ext.login import login_user, logout_user, current_user, login_required
 import twilio.twiml
+from flask_wtf import RecaptchaField
 from twilio.twiml.messaging_response import Message, MessagingResponse
 from twilio.twiml.voice_response import Dial, Number, VoiceResponse
-
 from cmm_flask.forms import RegisterForm, LoginForm, DiscussionProfileForm, ConversationForm, \
     ConversationConfirmationForm, ExchangeForm
 from cmm_flask.view_helpers import twiml, view, redirect_to, view_with_params
@@ -171,14 +171,11 @@ def confirm_conversation():
         .filter(Conversation.status == 'pending'
                 and Conversation.discussion_profile.host.id == user.id) \
         .first()
-    print("mayube it is none")
     if conversation is not None:
         if 'yes' in form.Body.data or 'accept' in form.Body.data or 'Accept' in form.Body.data:
             conversation.confirm()
             if conversation.discussion_profile.anonymous_phone_number is None:
-                print("about to buy.  I bet this is the issue")
                 conversation.discussion_profile.buy_number(user.area_code)
-                print('nevermind')
         else:
             conversation.reject()
         db.session.commit()
@@ -237,7 +234,6 @@ def _gather_outgoing_phone_number(incoming_phone_number, anonymous_phone_number)
     vacay = Conversation.query \
         .filter(Conversation.discussion_profile.anonymous_phone_number == anonymous_phone_number) \
         .first()
-    print(vacay) # None
     if conversation.guest.phone_number == incoming_phone_number:
         return conversation.discussion_profile.host.phone_number
 

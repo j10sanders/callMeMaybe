@@ -21,9 +21,14 @@
         {{ render_field(form.password) }}
         {{ render_field(form.country_code, id="authy-countries" ) }}
         {{ render_field(form.phone_number , type='number') }}
-
+        {{ form.recaptcha }}
+        <br>
         <button type="submit" class="btn btn-primary">Sign up</button>
+
     </form>
+
+
+
 
 </div>
 

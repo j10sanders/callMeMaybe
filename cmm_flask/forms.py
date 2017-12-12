@@ -1,4 +1,4 @@
-from flask_wtf import Form
+from flask_wtf import Form, RecaptchaField
 from wtforms import TextField, PasswordField, IntegerField, HiddenField
 from wtforms.validators import DataRequired, Length, Email, URL
 
@@ -27,6 +27,8 @@ class RegisterForm(Form):
             'Phone Number:',
             validators=[DataRequired("Valid phone number is required")]
     )
+
+    recaptcha = RecaptchaField()
 
 
 class LoginForm(Form):

@@ -10,14 +10,12 @@ def init_models_module(db, bcrypt, flask_app):
     model_settings['bcrypt'] = bcrypt
     model_settings['app'] = flask_app
 
-
 def app_db():
     return model_settings['db']
 
 
 def bcrypt():
     return model_settings['bcrypt']
-
 
 def auth_token():
     return model_settings['app'].config['TWILIO_AUTH_TOKEN']
@@ -33,3 +31,4 @@ def account_sid():
 
 def application_sid():
     return model_settings['app'].config['APPLICATION_SID']
+
