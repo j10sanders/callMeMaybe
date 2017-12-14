@@ -18,7 +18,6 @@ from cmm_flask.models.conversation import Conversation
 from werkzeug.security import check_password_hash, generate_password_hash
 from werkzeug.exceptions import Forbidden
 
-@app.route('/', methods=["GET", "POST"])
 @app.route('/register', methods=["GET", "POST"])
 def register():
     form = RegisterForm()
@@ -75,8 +74,8 @@ def logout():
     return redirect_to('home')
 
 
+@app.route('/', methods=["GET", "POST"])
 @app.route('/home', methods=["GET"])
-@login_required
 def home():
     return view('home')
 
