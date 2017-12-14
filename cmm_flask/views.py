@@ -73,15 +73,13 @@ def logout():
     logout_user()
     return redirect_to('home')
 
-
-@app.route('/', methods=["GET", "POST"])
+@app.route('/', methods=["GET"])
 @app.route('/home', methods=["GET"])
 def home():
     return view('home')
 
 
 @app.route('/discussions', methods=["GET"])
-@login_required
 def discussions():
     discussion_profiles = DiscussionProfile.query.all()
     return view_with_params('discussions', discussion_profiles=discussion_profiles)
@@ -122,13 +120,12 @@ def test_new_discussion():
 
 @app.route('/conversations/', methods=["POST"], defaults={'discussion_id': None})
 @app.route('/conversations/<discussion_id>', methods=["GET", "POST"])
-@login_required
 def new_conversation(discussion_id):
     discussion_profile = None
     form = ConversationForm()
     form.discussion_id.data = discussion_id
 
-    if request.method == 'POST':
+    if request.method == 'POST': #this is where I'll need truffle/Meta Mask
         if form.validate_on_submit():
             guest = User.query.get(current_user.get_id())
 
@@ -148,7 +145,6 @@ def new_conversation(discussion_id):
 
 
 @app.route('/conversations', methods=["GET"])
-@login_required
 def conversations():
     user = User.query.get(current_user.get_id())
     conversations_as_host = Conversation.query \
