@@ -64,3 +64,9 @@ target/
 
 #config
 config.py.env
+
+
+#react stuff
+node_modules
+tmp
+static/dist
