@@ -125,7 +125,7 @@ def new_conversation(discussion_id):
     form = ConversationForm()
     form.discussion_id.data = discussion_id
 
-    if request.method == 'POST': #this is where I'll need truffle/Meta Mask
+    if request.method == 'POST': #this is where I'll need truffle/Meta Mask.  May also need to send a verification text.
         if form.validate_on_submit():
             guest = User.query.get(current_user.get_id())
 
