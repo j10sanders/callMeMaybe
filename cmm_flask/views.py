@@ -127,10 +127,10 @@ def new_conversation(discussion_id):
 
     if request.method == 'POST': #this is where I'll need truffle/Meta Mask
         if form.validate_on_submit():
-            guest = User.query.get(current_user.get_id())
-
+            # guest = User.query.get(current_user.get_id())
+            guest_phone_number = generate_password_hash(form.message.phone_number)
             discussion_profile = DiscussionProfile.query.get(form.discussion_id.data)
-            conversation = Conversation(form.message.data, discussion_profile, guest)
+            conversation = Conversation(form.message.data, discussion_profile, guest_phone_number)
             db.session.add(conversation)
             db.session.commit()
 
@@ -196,7 +196,6 @@ def exchange_sms():
 @app.route('/exchange/voice', methods=["POST"])
 def exchange_voice():
     form = ExchangeForm()
-
     outgoing_number = _gather_outgoing_phone_number(form.From.data, form.To.data)
 
     # response = twilio.twiml.Response()
@@ -230,6 +229,12 @@ def load_user(id):
 
 
 def _gather_outgoing_phone_number(incoming_phone_number, anonymous_phone_number):
+    #for all numbers in conversation?
+
+
+    check_password_hash(candidate_user.password, form.password.data)
+
+
     vacay = Conversation.query \
         .filter(Conversation.discussion_profile.anonymous_phone_number == anonymous_phone_number) \
         .first()

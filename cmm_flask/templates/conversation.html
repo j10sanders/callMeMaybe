@@ -21,11 +21,11 @@
                     {{ form.csrf_token }}
                     {{ form.proper }}
                     {{ render_field(form.discussion_id)}}
+                    {{ render_field(form.phone_number , type='number') }}
                     {{ render_field(form.message,
                     placeholder="Hello! I want to talk with you.") }}
 
-
-                    <button class="btn btn-primary">Add to user's whitelist</button>
+                    <button class="btn btn-primary">Add your (encrypted) phone number to this whitelist</button>
                 </form>
             </div>
         </div>
