@@ -61,6 +61,11 @@ class ConversationForm(Form):
 
     discussion_id = HiddenField()
 
+    phone_number = IntegerField(
+            'Phone Number:',
+            validators=[DataRequired("Valid phone number is required")]
+    )
+
 
 class ConversationConfirmationForm(Form):
     From = TextField('From')

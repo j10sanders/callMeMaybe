@@ -15,7 +15,6 @@ class DiscussionProfile(db.Model):
     host_id = db.Column(db.Integer, db.ForeignKey('users.id'))
     host = db.relationship("User", back_populates="discussion_profiles")
     conversations = db.relationship("Conversation", back_populates="discussion_profile", passive_deletes=True)
-
     anonymous_phone_number = db.Column(db.String, nullable=True)
 
     def __init__(self, description, image_url, host):
@@ -26,7 +25,7 @@ class DiscussionProfile(db.Model):
     def __repr__(self):
         return '<DiscussionProfile {0} {1}>'.format(self.id, self.description)
 
-    def buy_number(self, area_code):
+    def buy_number(self, area_code=917):
         numbers = self._get_twilio_client().available_phone_numbers("US") \
                                            .local \
                                            .list(area_code=area_code,
