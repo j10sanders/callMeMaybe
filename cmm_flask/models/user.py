@@ -15,7 +15,7 @@ class User(db.Model):
     phone_number = db.Column(db.String, nullable=False)
     area_code = db.Column(db.String, nullable=False)
 
-    conversations = db.relationship("Conversation", back_populates="guest")
+    #conversations = db.relationship("Conversation", back_populates="guest")
     discussion_profiles = db.relationship("DiscussionProfile", back_populates="host")
 
     def __init__(self, name, email, password, phone_number, area_code):

@@ -3,7 +3,7 @@
 <form action="{{ url_for('logout') }}" method="POST" id="logoutForm" style="display:none;"></form>
 <li><img src="/static/images/phone-call.png" alt="Spock"/></li>
 <li><a href="{{ url_for('conversations') }}" id="conversationsLink">Your Conversations</a></li>
-<li><a href="{{ url_for('test_new_discussion') }}" id="newDiscussionLink">Create a Discussion Profile</a></li>
+<li><a href="{{ url_for('new_discussion') }}" id="newDiscussionLink">Create a Discussion Profile</a></li>
 <li><a href="javascript:document.getElementById('logoutForm').submit()" id="logoutLink">Log out</a></li>
 {% else %}
 <li><a href="{{ url_for('register') }}" id="registerLink">Sign Up</a></li>

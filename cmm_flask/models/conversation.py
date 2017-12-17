@@ -1,6 +1,7 @@
 from cmm_flask.models import app_db, auth_token, account_sid, phone_number, application_sid
 from flask import render_template
 from twilio.rest import Client
+import pdb
 
 DB = app_db()
 
@@ -16,7 +17,7 @@ class Conversation(DB.Model):
     #guest_id = DB.Column(DB.Integer, DB.ForeignKey('users.id'))
     discussion_profile_id = DB.Column(DB.Integer, DB.ForeignKey('discussion_profiles.id', ondelete='CASCADE'))
     #guest = DB.relationship("User", back_populates="conversations")
-    guest_phone_number = db.Column(db.String)
+    guest_phone_number = DB.Column(DB.String)
     discussion_profile = DB.relationship("DiscussionProfile", back_populates="conversations")
 
     def __init__(self, message, discussion_profile, guest_phone_number):
@@ -37,20 +38,21 @@ class Conversation(DB.Model):
     def notify_host(self):
         self._send_message(self.discussion_profile.host.phone_number,
                            render_template('messages/sms_host.txt',
-                                           name=self.guest.name,
+                                           #name=self.guest.name,
                                            description=self.discussion_profile.description,
                                            message=self.message))
 
     def notify_guest(self):
-        self._send_message(self.guest.phone_number,
+        self._send_message(self.guest_phone_number,
                            render_template('messages/sms_guest.txt',
                                            description=self.discussion_profile.description,
                                            status=self.status))
 
-    
-
-    def _send_message(self, to, message):
+    def _send_message(self, to, message): 
         self._get_twilio_client().messages \
                                  .create(to,
                                          from_=phone_number(),
                                          body=message)
+
+    def _get_twilio_client(self):
+        return Client(account_sid(), auth_token())

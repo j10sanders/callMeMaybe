@@ -54,3 +54,19 @@
 
 # if __name__ == "__main__":
 #     app.run(debug=True)
+
+from werkzeug.security import check_password_hash, generate_password_hash
+
+x = "Hello world"
+y = "yes"
+
+z = generate_password_hash(x)
+print(z)
+y = generate_password_hash(y)
+print(y)
+
+d = generate_password_hash("Hello world")
+print(d)
+
+for i in [z,y,d]:
+	print(check_password_hash(i, "Hello world"))

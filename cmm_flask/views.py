@@ -128,7 +128,9 @@ def new_conversation(discussion_id):
     if request.method == 'POST': #this is where I'll need truffle/Meta Mask
         if form.validate_on_submit():
             # guest = User.query.get(current_user.get_id())
-            guest_phone_number = generate_password_hash(form.message.phone_number)
+
+            guest_phone_number = form.phone_number.data
+            #guest_phone_number = generate_password_hash(form.message.phone_number)
             discussion_profile = DiscussionProfile.query.get(form.discussion_id.data)
             conversation = Conversation(form.message.data, discussion_profile, guest_phone_number)
             db.session.add(conversation)
@@ -232,16 +234,13 @@ def _gather_outgoing_phone_number(incoming_phone_number, anonymous_phone_number)
     #for all numbers in conversation?
 
 
-    check_password_hash(candidate_user.password, form.password.data)
-
-
     vacay = Conversation.query \
         .filter(Conversation.discussion_profile.anonymous_phone_number == anonymous_phone_number) \
         .first()
-    if conversation.guest.phone_number == incoming_phone_number:
+    if conversation.guest_phone_number == incoming_phone_number:
         return conversation.discussion_profile.host.phone_number
 
-    return conversation.guest.phone_number
+    return conversation.guest_phone_number
 
 
 def _respond_message(message):
