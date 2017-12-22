@@ -1,5 +1,5 @@
 from cmm_flask import db, bcrypt, app, login_manager
-from flask import session, g, request, flash, Blueprint
+from flask import session, g, request, flash, Blueprint, render_template
 from flask.ext.login import login_user, logout_user, current_user, login_required
 import twilio.twiml
 from flask_wtf import RecaptchaField
@@ -73,7 +73,11 @@ def logout():
     logout_user()
     return redirect_to('home')
 
-@app.route('/', methods=["GET"])
+
+@app.route('/', methods=['GET'])
+def index():
+    return app.send_static_file('index.html')
+
 @app.route('/home', methods=["GET"])
 def home():
     return view('home')
