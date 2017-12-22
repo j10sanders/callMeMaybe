@@ -76,11 +76,12 @@ def logout():
 
 @app.route('/', methods=['GET'])
 def index():
-    return app.send_static_file('index.html')
+    return render_template('index.html')
+
 
 @app.route('/home', methods=["GET"])
 def home():
-    return view('home')
+    return app.send_static_file('index.html')
 
 
 @app.route('/discussions', methods=["GET"])

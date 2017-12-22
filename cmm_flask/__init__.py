@@ -9,8 +9,8 @@ db = SQLAlchemy()
 bcrypt = Bcrypt()
 login_manager = LoginManager()
 
-def create_app(config_name='development', p_db=db, p_bcrypt=bcrypt, p_login_manager=login_manager, static_folder="./static/dist", template_folder="./static"):
-    new_app = Flask(__name__)
+def create_app(config_name='development', p_db=db, p_bcrypt=bcrypt, p_login_manager=login_manager):
+    new_app = Flask(__name__, static_folder="./static/dist", template_folder="./static")
     new_app.debug = True
     config_app(config_name, new_app)
     p_db.init_app(new_app)
