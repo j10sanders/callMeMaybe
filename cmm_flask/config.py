@@ -16,6 +16,7 @@ class DefaultConfig(object):
     SECRET_KEY = os.environ.get("SECRET_KEY", os.urandom(12))
     RECAPTCHA_PUBLIC_KEY = "6Le1oTwUAAAAAFTxrBQ5y45_ZUBRAzJnheaw1UG3"
     RECAPTCHA_PRIVATE_KEY = os.environ.get("RECAPTCHA_PRIVATE_KEY")
+    SQLALCHEMY_TRACK_MODIFICATIONS = False
 
 class DevelopmentConfig(DefaultConfig):
     DEBUG = True
