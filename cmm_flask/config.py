@@ -17,6 +17,7 @@ class DefaultConfig(object):
     RECAPTCHA_PUBLIC_KEY = "6Le1oTwUAAAAAFTxrBQ5y45_ZUBRAzJnheaw1UG3"
     RECAPTCHA_PRIVATE_KEY = os.environ.get("RECAPTCHA_PRIVATE_KEY")
     SQLALCHEMY_TRACK_MODIFICATIONS = False
+    REACT_APP_USERS_SERVICE_URL='http://localhost:5000'
 
 class DevelopmentConfig(DefaultConfig):
     DEBUG = True

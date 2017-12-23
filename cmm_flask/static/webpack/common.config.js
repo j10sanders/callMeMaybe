@@ -7,8 +7,10 @@ const development = require('./dev.config');
 const production = require('./prod.config');
 
 require('babel-polyfill').default;
+require('dotenv').config();
 
 const TARGET = process.env.npm_lifecycle_event;
+const REACT_APP_USERS_SERVICE_URL = process.env.REACT_APP_USERS_SERVICE_URL;
 
 const PATHS = {
     app: path.join(__dirname, '../src'),
@@ -16,6 +18,8 @@ const PATHS = {
 };
 
 process.env.BABEL_ENV = TARGET;
+process.env.REACT_APP_USERS_SERVICE_URL = REACT_APP_USERS_SERVICE_URL;
+
 
 const common = {
     entry: [
@@ -25,6 +29,10 @@ const common = {
     output: {
         path: PATHS.build,
         filename: 'bundle.js',
+    },
+
+    node: {
+        fs: "empty"
     },
 
     resolve: {

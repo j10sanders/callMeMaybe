@@ -5,9 +5,9 @@ import twilio.twiml
 from flask_wtf import RecaptchaField
 from twilio.twiml.messaging_response import Message, MessagingResponse
 from twilio.twiml.voice_response import Dial, Number, VoiceResponse
-from cmm_flask.forms import RegisterForm, LoginForm, DiscussionProfileForm, ConversationForm, \
+from cmm_flask.static.forms import RegisterForm, LoginForm, DiscussionProfileForm, ConversationForm, \
     ConversationConfirmationForm, ExchangeForm
-from cmm_flask.view_helpers import twiml, view, redirect_to, view_with_params
+from cmm_flask.static.view_helpers import twiml, view, redirect_to, view_with_params
 from cmm_flask.models import init_models_module
 
 init_models_module(db, bcrypt, app)
@@ -17,37 +17,35 @@ from cmm_flask.models.discussion_profile import DiscussionProfile
 from cmm_flask.models.conversation import Conversation
 from werkzeug.security import check_password_hash, generate_password_hash
 from werkzeug.exceptions import Forbidden
+import pdb
 
-@app.route('/register', methods=["GET", "POST"])
+@app.route('/api/register', methods=["POST"])
 def register():
-    form = RegisterForm()
-    if request.method == 'POST':
-        if form.validate_on_submit():
+    # form = RegisterForm()
+    form=request.get_json()
+    print(form, "HELLO")
+    pdb.set_trace()
 
-            form_number = "+{0}{1}".format(form.country_code.data, form.phone_number.data)
-            if User.query.filter(User.email == form.email.data).count() > 0:
-                form.email.errors.append("Email address already in use.")
-                return view('register', form)
-            elif User.query.filter(User.phone_number == form_number).count() > 0:
-                form.email.errors.append("Phone number already in use.")
-                return view('register', form)
+    tel = "+{0}{1}".format(form.country_code.data, form.phone_number.data)
+    if User.query.filter(User.email == form.email.data).count() > 0:
+        form.email.errors.append("Email address already in use.")
+        return view('register', form)
+    elif User.query.filter(User.phone_number == tel).count() > 0:
+        form.email.errors.append("Phone number already in use.")
+        return view('register', form)
+    tel = tel
+    user = User(
+            name=form.name.data,
+            email=form.email.data,
+            password=generate_password_hash(form.password.data),
+            phone_number=tel,
+            area_code=str(form.phone_number.data)[0:3])
 
-            user = User(
-                    name=form.name.data,
-                    email=form.email.data,
-                    password=generate_password_hash(form.password.data),
-                    phone_number=form_number,
-                    area_code=str(form.phone_number.data)[0:3])
+    db.session.add(user)
+    db.session.commit()
+    login_user(user, remember=True)
 
-            db.session.add(user)
-            db.session.commit()
-            login_user(user, remember=True)
-
-            return redirect_to('home')
-        else:
-            return view('register', form)
-
-    return view('register', form)
+    return redirect_to('home')
 
 
 @app.route('/login', methods=["GET", "POST"])
@@ -65,6 +63,7 @@ def login():
             login_user(candidate_user, remember=True)
             return redirect_to('home')
     return view('login', form)
+    
 
 
 @app.route('/logout', methods=["POST"])
@@ -79,9 +78,16 @@ def index():
     return render_template('index.html')
 
 
-@app.route('/home', methods=["GET"])
-def home():
-    return app.send_static_file('index.html')
+@app.route('/<path:path>', methods=['GET'])
+def any_root_path(path):
+    return render_template('index.html')
+
+
+
+
+# @app.route('/home', methods=["GET"])
+# def home():
+#     return render_template('./src/home.html')
 
 
 @app.route('/discussions', methods=["GET"])
