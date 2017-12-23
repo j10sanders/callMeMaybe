@@ -24,28 +24,31 @@ def register():
     # form = RegisterForm()
     form=request.get_json()
     print(form, "HELLO")
-    pdb.set_trace()
+    #pdb.set_trace()
 
-    tel = "+{0}{1}".format(form.country_code.data, form.phone_number.data)
-    if User.query.filter(User.email == form.email.data).count() > 0:
-        form.email.errors.append("Email address already in use.")
-        return view('register', form)
+    tel = form['phone_number'] #"+{0}{1}".format(form.country_code.data, form.phone_number.data)
+    if User.query.filter(User.email == form['email']).count() > 0:
+        # form.email.errors.append("Email address already in use.")
+        print("Email address already in use.")
+        return "Email address already in use."
     elif User.query.filter(User.phone_number == tel).count() > 0:
-        form.email.errors.append("Phone number already in use.")
-        return view('register', form)
-    tel = tel
+        #form.email.errors.append("Phone number already in use.")
+        #return view('register', form)
+        return "Phone number already in use."
+
     user = User(
-            name=form.name.data,
-            email=form.email.data,
-            password=generate_password_hash(form.password.data),
+            name=form['name'],
+            email=form['email'],
+            password=generate_password_hash(form['password']),
             phone_number=tel,
-            area_code=str(form.phone_number.data)[0:3])
+            area_code=str(form[phone_number])[0:3])
 
     db.session.add(user)
     db.session.commit()
     login_user(user, remember=True)
 
-    return redirect_to('home')
+    #return redirect_to('home')
+    return "redirect to home"
 
 
 @app.route('/login', methods=["GET", "POST"])

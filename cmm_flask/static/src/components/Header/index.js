@@ -93,7 +93,7 @@ export class Header extends Component {
                   title="React-Redux-Flask"
                   onLeftIconButtonTouchTap={() => this.openNav()}
                   iconElementRight={
-                      <FlatButton label="Homes" onClick={() => this.dispatchNewRoute('/')} />
+                      <FlatButton label="Home" onClick={() => this.dispatchNewRoute('/')} />
                     }
                 />
             </header>

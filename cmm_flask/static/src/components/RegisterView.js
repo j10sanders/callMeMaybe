@@ -36,6 +36,7 @@ export default class RegisterView extends React.Component {
         super(props);
         const redirectRoute = '/login';
         this.state = {
+            name: '',
             email: '',
             password: '',
             tel: '',
@@ -129,6 +130,7 @@ export default class RegisterView extends React.Component {
         e.preventDefault();
         axios.post(`${process.env.REACT_APP_USERS_SERVICE_URL}/api/register`,
             {
+            name: this.state.name,
             email: this.state.email,
             password: this.state.password,
             phone_number: this.state.tel,
@@ -152,6 +154,14 @@ export default class RegisterView extends React.Component {
                                 </div>
                         }
 
+                        <div className="col-md-12">
+                            <TextField
+                              hintText="Name"
+                              floatingLabelText="Name"
+                              type="name"
+                              onChange={(e) => this.changeValue(e, 'name')}
+                            />
+                        </div>
                         <div className="col-md-12">
                             <TextField
                               hintText="Email"
