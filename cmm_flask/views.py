@@ -52,7 +52,7 @@ def register():
     return "redirect to home"
 
 
-@app.route('/login', methods=["GET", "POST"])
+@app.route('/api/login', methods=["GET", "POST"])
 def login():
     form = LoginForm()
     if request.method == 'POST':

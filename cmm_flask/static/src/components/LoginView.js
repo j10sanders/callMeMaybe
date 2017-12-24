@@ -109,7 +109,15 @@ export default class LoginView extends React.Component {
 
     login(e) {
         e.preventDefault();
-        this.props.loginUser(this.state.email, this.state.password, this.state.redirectTo);
+        // this.props.loginUser(this.state.email, this.state.password, this.state.redirectTo);
+        axios.post(`${process.env.REACT_APP_USERS_SERVICE_URL}/api/login`,
+            {
+            email: this.state.email,
+            password: this.state.password,
+        }
+        ).then(function (response) {
+            browserHistory.push('/discussions');
+        })
     }
 
     render() {

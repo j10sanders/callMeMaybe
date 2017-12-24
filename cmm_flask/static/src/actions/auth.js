@@ -120,32 +120,32 @@ export function registerUserFailure(error) {
     };
 }
 
-export function registerUser(email, password) {debugger;
+export function registerUser(email, password) {
     return function (dispatch) {
-        // dispatch(registerUserRequest());
+        dispatch(registerUserRequest());
         return create_user(email, password, tel)
             .then(parseJSON)
-            // .then(response => {
-            //     try {
-            //         dispatch(registerUserSuccess(response.token));
-            //         browserHistory.push('/main');
-            //     } catch (e) {
-            //         dispatch(registerUserFailure({
-            //             response: {
-            //                 status: 403,
-            //                 statusText: 'Invalid token',
-            //             },
-            //         }));
-            //     }
-            // })
-            // .catch(error => {
-            //     dispatch(registerUserFailure({
-            //         response: {
-            //             status: 403,
-            //             statusText: 'User with that email already exists',
-            //         },
-            //     }
-            //     ));
-            // });
+            .then(response => {
+                try {
+                    dispatch(registerUserSuccess(response.token));
+                    browserHistory.push('/main');
+                } catch (e) {
+                    dispatch(registerUserFailure({
+                        response: {
+                            status: 403,
+                            statusText: 'Invalid token',
+                        },
+                    }));
+                }
+            })
+            .catch(error => {
+                dispatch(registerUserFailure({
+                    response: {
+                        status: 403,
+                        statusText: 'User with that email already exists',
+                    },
+                }
+                ));
+            });
     };
 }
