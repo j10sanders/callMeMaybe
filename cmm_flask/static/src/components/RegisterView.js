@@ -7,6 +7,7 @@ import Paper from 'material-ui/Paper';
 import * as actionCreators from '../actions/auth';
 import { validateEmail } from '../utils/misc';
 import axios from 'axios';
+import { browserHistory } from 'react-router';
 
 
 function mapStateToProps(state) {
@@ -136,7 +137,7 @@ export default class RegisterView extends React.Component {
             phone_number: this.state.tel,
         }
         ).then(function (response) {
-            console.log(response);
+            browserHistory.push('/discussions');
         })
         // this.props.registerUser(this.state.email, this.state.password, this.state.redirectTo);
     }

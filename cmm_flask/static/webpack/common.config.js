@@ -40,6 +40,13 @@ const common = {
         modulesDirectories: ['node_modules', PATHS.app],
     },
 
+    stats: {
+              colors: true,
+              modules: true,
+              reasons: true,
+              errorDetails: true
+            },
+
     module: {
         loaders: [{
             test: /bootstrap-sass\/assets\/javascripts\//,

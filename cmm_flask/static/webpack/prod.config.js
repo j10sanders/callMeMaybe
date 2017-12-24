@@ -22,6 +22,13 @@ module.exports = {
         fs: "empty"
     },
 
+    stats: {
+              colors: true,
+              modules: true,
+              reasons: true,
+              errorDetails: true
+            },
+
     plugins: [
         new webpack.DefinePlugin({
             'process.env': {

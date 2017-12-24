@@ -9,6 +9,7 @@ from cmm_flask.static.forms import RegisterForm, LoginForm, DiscussionProfileFor
     ConversationConfirmationForm, ExchangeForm
 from cmm_flask.static.view_helpers import twiml, view, redirect_to, view_with_params
 from cmm_flask.models import init_models_module
+import json
 
 init_models_module(db, bcrypt, app)
 
@@ -24,7 +25,7 @@ def register():
     # form = RegisterForm()
     form=request.get_json()
     print(form, "HELLO")
-    #pdb.set_trace()
+    pdb.set_trace()
 
     tel = form['phone_number'] #"+{0}{1}".format(form.country_code.data, form.phone_number.data)
     if User.query.filter(User.email == form['email']).count() > 0:
@@ -41,7 +42,7 @@ def register():
             email=form['email'],
             password=generate_password_hash(form['password']),
             phone_number=tel,
-            area_code=str(form[phone_number])[0:3])
+            area_code=str(tel)[0:3])
 
     db.session.add(user)
     db.session.commit()
@@ -93,10 +94,15 @@ def any_root_path(path):
 #     return render_template('./src/home.html')
 
 
-@app.route('/discussions', methods=["GET"])
+@app.route('/api/discussions', methods=["GET"])
 def discussions():
     discussion_profiles = DiscussionProfile.query.all()
-    return view_with_params('discussions', discussion_profiles=discussion_profiles)
+    obj = []
+    for ds in discussion_profiles:
+        obj.append({'id':ds.id, 'host':ds.host.name, 'image':ds.image_url, 'description': ds.description})
+    # pdb.set_trace()
+    objs=json.dumps(obj)
+    return objs
 
 
 @app.route('/discussions/new', methods=["GET", "POST"])

@@ -7,6 +7,7 @@ import { Route } from 'react-router';
 import { App } from './containers/App';
 import { HomeContainer } from './containers/HomeContainer';
 import LoginView from './components/LoginView';
+import Discussions from './components/Discussions/Discussions'
 import RegisterView from './components/RegisterView';
 import ProtectedView from './components/ProtectedView';
 import Analytics from './components/Analytics';
@@ -19,6 +20,7 @@ import { requireNoAuthentication } from './components/notAuthenticatedComponent'
 export default (
     <Route path="/" component={App}>
         <Route path="main" component={requireAuthentication(ProtectedView)} />
+        <Route path="discussions" component={requireNoAuthentication(Discussions)} />
         <Route path="login" component={requireNoAuthentication(LoginView)} />
         <Route path="register" component={requireNoAuthentication(RegisterView)} />
         <Route path="home" component={requireNoAuthentication(HomeContainer)} />
