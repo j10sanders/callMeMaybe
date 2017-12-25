@@ -1,0 +1,25 @@
+{% extends "layout.html" %}
+
+{% block content %}
+
+<div class="container">
+    <h1>New Discussion Profile</h1>
+
+    <form method="POST" role="form">
+        {% from "_formhelpers.html" import render_errors, render_field %}
+        {{ form.csrf_token }}
+        {{ render_errors(form) }}
+        <hr/>
+
+        {{ render_field(form.description, placeholder="I'm a super cool dude -- I take about super cool things") }}
+        {{ render_field(form.image_url, placeholder='idk.png') }}
+
+        <div class="actions">
+            <button type="submit" class="btn btn-lg btn-primary">Create Discussion Profile</button>
+        </div>
+    </form>
+
+    <a href="{{ url_for('discussions') }}">Back</a>
+</div>
+
+{% endblock %}

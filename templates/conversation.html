@@ -1,0 +1,35 @@
+{% extends "layout.html" %}
+
+{% block content %}
+
+<div class="discussion-detail">
+    <div class="overview">
+        <img src="{{discussion_profile.image_url}}" alt="Discussion profile image"/>
+    </div>
+    <div class="container">
+        <h1>{{discussion_profile.description}}
+            <h2>Phone number: {{discussion_profile.anonymous_phone_number}}</h1></h1><span></span>
+        <hr>
+        <div class="panel panel-default">
+            <div class="panel-heading">
+                <h3 class="panel-title">Add your number to the whitelist</h3>
+            </div>
+            <div class="panel-body">
+                <form method="POST" role="form">
+                    {% from "_formhelpers.html" import render_errors, render_field %}
+
+                    {{ form.csrf_token }}
+                    {{ form.proper }}
+                    {{ render_field(form.discussion_id)}}
+                    {{ render_field(form.phone_number , type='number') }}
+                    {{ render_field(form.message,
+                    placeholder="Hello! I want to talk with you.") }}
+
+                    <button class="btn btn-primary">Add your (encrypted) phone number to this whitelist</button>
+                </form>
+            </div>
+        </div>
+    </div>
+</div>
+
+{% endblock %}

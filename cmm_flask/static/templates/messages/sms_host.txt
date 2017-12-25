@@ -1,3 +1,0 @@
-You have a new call request from for {{ description }}:
-{{ message }}
-Reply [accept] or [reject]

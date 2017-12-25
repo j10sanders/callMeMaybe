@@ -5,9 +5,9 @@ import twilio.twiml
 from flask_wtf import RecaptchaField
 from twilio.twiml.messaging_response import Message, MessagingResponse
 from twilio.twiml.voice_response import Dial, Number, VoiceResponse
-from cmm_flask.static.forms import RegisterForm, LoginForm, DiscussionProfileForm, ConversationForm, \
+from cmm_flask.forms import RegisterForm, LoginForm, DiscussionProfileForm, ConversationForm, \
     ConversationConfirmationForm, ExchangeForm
-from cmm_flask.static.view_helpers import twiml, view, redirect_to, view_with_params
+from cmm_flask.view_helpers import twiml, view, redirect_to, view_with_params
 from cmm_flask.models import init_models_module
 import json
 
