@@ -77,9 +77,9 @@ def logout():
     return redirect_to('home')
 
 
-@app.route('/', methods=['GET'])
-def index():
-    return render_template('index.html')
+# @app.route('/', methods=['GET'])
+# def index():
+#     return render_template('index.html')
 
 
 @app.route('/<path:path>', methods=['GET'])
@@ -103,6 +103,37 @@ def discussions():
     # pdb.set_trace()
     objs=json.dumps(obj)
     return objs
+
+
+@app.route('/conversations', methods=["GET"])
+@app.route('/conversations/', methods=["POST"], defaults={'discussion_id': None})
+@app.route('/conversations/<discussion_id>', methods=["GET", "POST"])
+def new_conversation():
+    discussion_id = request.query_string[3:] # ex) 'id=423'
+    pdb.set_trace()
+    discussion_profile = None
+    # form.discussion_id.data = discussion_id
+
+    if request.method == 'POST': #this is where I'll need truffle/Meta Mask.  May also need to send a verification text.
+        if form.validate_on_submit():
+            # guest = User.query.get(current_user.get_id())
+
+            #guest_phone_number = form.phone_number.data
+            guest_phone_number = generate_password_hash(form.message.phone_number)
+            discussion_profile = DiscussionProfile.query.get(form.discussion_id.data)
+            conversation = Conversation(form.message.data, discussion_profile, guest_phone_number)
+            db.session.add(conversation)
+            db.session.commit()
+
+            conversation.notify_host()
+
+            return redirect_to('discussions')
+
+    if discussion_id is not None:
+        dp = DiscussionProfile.query.get(discussion_id)
+
+    profile=json.dumps({'host': dp.host.name, 'image': dp.image_url, 'description': dp.description})
+    return profile
 
 
 @app.route('/discussions/new', methods=["GET", "POST"])
@@ -138,48 +169,49 @@ def test_new_discussion():
     return view('discussion_new', form)
 
 
-@app.route('/conversations/', methods=["POST"], defaults={'discussion_id': None})
-@app.route('/conversations/<discussion_id>', methods=["GET", "POST"])
-def new_conversation(discussion_id):
-    discussion_profile = None
-    form = ConversationForm()
-    form.discussion_id.data = discussion_id
 
-    if request.method == 'POST': #this is where I'll need truffle/Meta Mask.  May also need to send a verification text.
-        if form.validate_on_submit():
-            # guest = User.query.get(current_user.get_id())
+# @app.route('/conversations/', methods=["POST"], defaults={'discussion_id': None})
+# @app.route('/conversations/<discussion_id>', methods=["GET", "POST"])
+# def new_conversation(discussion_id):
+#     discussion_profile = None
+#     form = ConversationForm()
+#     form.discussion_id.data = discussion_id
 
-            #guest_phone_number = form.phone_number.data
-            guest_phone_number = generate_password_hash(form.message.phone_number)
-            discussion_profile = DiscussionProfile.query.get(form.discussion_id.data)
-            conversation = Conversation(form.message.data, discussion_profile, guest_phone_number)
-            db.session.add(conversation)
-            db.session.commit()
+#     if request.method == 'POST': #this is where I'll need truffle/Meta Mask.  May also need to send a verification text.
+#         if form.validate_on_submit():
+#             # guest = User.query.get(current_user.get_id())
 
-            conversation.notify_host()
+#             #guest_phone_number = form.phone_number.data
+#             guest_phone_number = generate_password_hash(form.message.phone_number)
+#             discussion_profile = DiscussionProfile.query.get(form.discussion_id.data)
+#             conversation = Conversation(form.message.data, discussion_profile, guest_phone_number)
+#             db.session.add(conversation)
+#             db.session.commit()
 
-            return redirect_to('discussions')
+#             conversation.notify_host()
 
-    if discussion_id is not None:
-        discussion_profile = DiscussionProfile.query.get(discussion_id)
+#             return redirect_to('discussions')
 
-    return view_with_params('conversation', discussion_profile=discussion_profile, form=form)
+#     if discussion_id is not None:
+#         discussion_profile = DiscussionProfile.query.get(discussion_id)
+
+#     return view_with_params('conversation', discussion_profile=discussion_profile, form=form)
 
 
-@app.route('/conversations', methods=["GET"])
-def conversations():
-    user = User.query.get(current_user.get_id())
-    conversations_as_host = Conversation.query \
-        .filter(DiscussionProfile.host_id == current_user.get_id() and len(DiscussionProfile.conversations) > 0) \
-        .join(DiscussionProfile) \
-        .filter(Conversation.discussion_profile_id == DiscussionProfile.id) \
-        .all()
+# @app.route('/conversations', methods=["GET"])
+# def conversations():
+#     user = User.query.get(current_user.get_id())
+#     conversations_as_host = Conversation.query \
+#         .filter(DiscussionProfile.host_id == current_user.get_id() and len(DiscussionProfile.conversations) > 0) \
+#         .join(DiscussionProfile) \
+#         .filter(Conversation.discussion_profile_id == DiscussionProfile.id) \
+#         .all()
 
-    conversations_as_guest = user.conversations
+#     conversations_as_guest = user.conversations
 
-    return view_with_params('conversations',
-                            conversations_as_guest=conversations_as_guest,
-                            conversations_as_host=conversations_as_host)
+#     return view_with_params('conversations',
+#                             conversations_as_guest=conversations_as_guest,
+#                             conversations_as_host=conversations_as_host)
 
 
 @app.route('/conversations/confirm', methods=["POST"])
