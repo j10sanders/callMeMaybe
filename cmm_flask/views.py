@@ -25,7 +25,7 @@ def register():
     # form = RegisterForm()
     form=request.get_json()
     print(form, "HELLO")
-    pdb.set_trace()
+    # pdb.set_trace()
 
     tel = form['phone_number'] #"+{0}{1}".format(form.country_code.data, form.phone_number.data)
     if User.query.filter(User.email == form['email']).count() > 0:
@@ -110,7 +110,7 @@ def discussions():
 @app.route('/conversations/<discussion_id>', methods=["GET", "POST"])
 def new_conversation():
     discussion_id = request.query_string[3:] # ex) 'id=423'
-    pdb.set_trace()
+    # pdb.set_trace()
     discussion_profile = None
     # form.discussion_id.data = discussion_id
 
@@ -130,9 +130,10 @@ def new_conversation():
             return redirect_to('discussions')
 
     if discussion_id is not None:
-        dp = DiscussionProfile.query.get(discussion_id)
-
-    profile=json.dumps({'host': dp.host.name, 'image': dp.image_url, 'description': dp.description})
+        dp = DiscussionProfile.query.get(int(discussion_id))
+    profile=json.dumps({'host': dp.host.name, 'image': dp.image_url, 'description': dp.description,
+        'anonymous_phone_number': dp.anonymous_phone_number
+    })
     return profile
 
 
