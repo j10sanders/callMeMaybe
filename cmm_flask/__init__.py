@@ -34,3 +34,7 @@ def config_app(config_name, new_app):
 app = create_app()
 
 import cmm_flask.views
+
+from views import auth_blueprint
+
+app.register_blueprint(auth_blueprint)
