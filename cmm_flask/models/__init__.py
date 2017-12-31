@@ -13,6 +13,8 @@ def init_models_module(db, bcrypt, flask_app):
 def app_db():
     return model_settings['db']
 
+def app():
+    return model_settings['app']
 
 def bcrypt():
     return model_settings['bcrypt']

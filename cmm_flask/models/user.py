@@ -14,15 +14,15 @@ class User(db.Model):
     id = db.Column(db.Integer, primary_key=True, autoincrement=True)
     email = db.Column(db.String(255), unique=True, nullable=False)
     password = db.Column(db.String(255), nullable=False)
-    registered_on = db.Column(db.DateTime, nullable=False)
+    registered_on = db.Column(db.DateTime, nullable=True)
     phone_number = db.Column(db.String, nullable=False)
     area_code = db.Column(db.String, nullable=False)
-    admin = db.Column(db.Boolean, nullable=False, default=False)
+    admin = db.Column(db.Boolean, nullable=True, default=False)
 
     #conversations = db.relationship("Conversation", back_populates="guest")
     discussion_profiles = db.relationship("DiscussionProfile", back_populates="host")
 
-      def __init__(self, email, password, admin=False):
+    def __init__(self, email, password, admin=False):
         self.email = email
         self.password = bcrypt.generate_password_hash(
             password, app.config.get('BCRYPT_LOG_ROUNDS')
@@ -56,23 +56,23 @@ class User(db.Model):
         return '<User %r>' % (self.name)
 
         def encode_auth_token(self, user_id):
-        """
-        Generates the Auth Token
-        :return: string
-        """
-        try:
-            payload = {
-                'exp': datetime.datetime.utcnow() + datetime.timedelta(days=0, seconds=5),
-                'iat': datetime.datetime.utcnow(),
-                'sub': user_id
-            }
-            return jwt.encode(
-                payload,
-                app.config.get('SECRET_KEY'),
-                algorithm='HS256'
-            )
-        except Exception as e:
-            return e
+            """
+            Generates the Auth Token
+            :return: string
+            """
+            try:
+                payload = {
+                    'exp': datetime.datetime.utcnow() + datetime.timedelta(days=0, seconds=5),
+                    'iat': datetime.datetime.utcnow(),
+                    'sub': user_id
+                }
+                return jwt.encode(
+                    payload,
+                    app.config.get('SECRET_KEY'),
+                    algorithm='HS256'
+                )
+            except Exception as e:
+                return e
 
     @staticmethod
     def decode_auth_token(auth_token):

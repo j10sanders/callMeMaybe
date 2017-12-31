@@ -318,6 +318,7 @@ class RegisterAPI(MethodView):
     """
 
     def post(self):
+        pdb.set_trace()
         # get the post data
         post_data = request.get_json()
         # check if user already exists

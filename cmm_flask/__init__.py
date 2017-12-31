@@ -35,6 +35,6 @@ app = create_app()
 
 import cmm_flask.views
 
-from views import auth_blueprint
+from cmm_flask.views import auth_blueprint
 
 app.register_blueprint(auth_blueprint)
