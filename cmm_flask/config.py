@@ -19,6 +19,9 @@ class DefaultConfig(object):
     SQLALCHEMY_TRACK_MODIFICATIONS = False
     REACT_APP_USERS_SERVICE_URL='http://localhost:5000'
     BCRYPT_LOG_ROUNDS = 13
+    AUTH0_CLIENT_ID = os.environ.get("CLIENT_ID")
+    AUTH0_DOMAIN = os.environ.get("DOMAIN")
+    AUTH0_CLIENT_SECRET = os.environ.get("CLIENT_SECRET")
 
 class DevelopmentConfig(DefaultConfig):
     DEBUG = True

@@ -1,5 +1,5 @@
 from cmm_flask import db, bcrypt, app, login_manager
-from flask import session, g, request, flash, Blueprint, render_template, Blueprint, make_response, jsonify
+from flask import session, g, request, flash, Blueprint, render_template, Blueprint, make_response, jsonify, _app_ctx_stack
 from flask.ext.login import login_user, logout_user, current_user, login_required
 import twilio.twiml
 from flask_wtf import RecaptchaField
@@ -11,6 +11,12 @@ from cmm_flask.view_helpers import twiml, view, redirect_to, view_with_params
 from cmm_flask.models import init_models_module
 import json
 from flask.views import MethodView
+from functools import wraps
+from os import environ as env
+from six.moves.urllib.request import urlopen
+from flask_cors import cross_origin
+from jose import jwt
+from dotenv import load_dotenv, find_dotenv
 
 init_models_module(db, bcrypt, app)
 
@@ -21,63 +27,188 @@ from werkzeug.security import check_password_hash, generate_password_hash
 from werkzeug.exceptions import Forbidden
 import pdb
 
+ENV_FILE = find_dotenv()
+if ENV_FILE:
+    load_dotenv(ENV_FILE)
+AUTH0_DOMAIN = env.get("AUTH0_DOMAIN")
+AUTH0_AUDIENCE = 'https://jonsanders.auth0.com/api/v2/'
+ALGORITHMS = ["RS256"]
+
 auth_blueprint = Blueprint('auth', __name__)
 
-@app.route('/api/register', methods=["POST"])
-def register():
-    # form = RegisterForm()
-    form=request.get_json()
-    print(form, "HELLO")
-    # pdb.set_trace()
+###
+class AuthError(Exception):
+    def __init__(self, error, status_code):
+        self.error = error
+        self.status_code = status_code
 
-    tel = form['phone_number'] #"+{0}{1}".format(form.country_code.data, form.phone_number.data)
-    if User.query.filter(User.email == form['email']).count() > 0:
-        # form.email.errors.append("Email address already in use.")
-        print("Email address already in use.")
-        return "Email address already in use."
-    elif User.query.filter(User.phone_number == tel).count() > 0:
-        #form.email.errors.append("Phone number already in use.")
-        #return view('register', form)
-        return "Phone number already in use."
+@app.errorhandler(AuthError)
+def handle_auth_error(ex):
+    response = jsonify(ex.error)
+    response.status_code = ex.status_code
+    return response
 
-    user = User(
-            name=form['name'],
-            email=form['email'],
-            password=generate_password_hash(form['password']),
-            phone_number=tel,
-            area_code=str(tel)[0:3])
+def get_token_auth_header():
+    """Obtains the access token from the Authorization Header
+    """
+    auth = request.headers.get("Authorization", None)
+    if not auth:
+        raise AuthError({"code": "authorization_header_missing",
+                        "description":
+                            "Authorization header is expected"}, 401)
 
-    db.session.add(user)
-    db.session.commit()
-    login_user(user, remember=True)
+    parts = auth.split()
 
-    #return redirect_to('home')
-    return "redirect to home"
+    if parts[0].lower() != "bearer":
+        raise AuthError({"code": "invalid_header",
+                        "description":
+                            "Authorization header must start with"
+                            " Bearer"}, 401)
+    elif len(parts) == 1:
+        raise AuthError({"code": "invalid_header",
+                        "description": "Token not found"}, 401)
+    elif len(parts) > 2:
+        raise AuthError({"code": "invalid_header",
+                        "description":
+                            "Authorization header must be"
+                            " Bearer token"}, 401)
+
+    token = parts[1]
+    return token
 
 
-@app.route('/api/login', methods=["GET", "POST"])
-def login():
-    form = LoginForm()
-    if request.method == 'POST':
-        if form.validate_on_submit():
-            candidate_user = User.query.filter(User.email == form.email.data).first()
+def requires_scope(required_scope):
+    """Determines if the required scope is present in the access token
+    Args:
+        required_scope (str): The scope required to access the resource
+    """
+    token = get_token_auth_header()
+    unverified_claims = jwt.get_unverified_claims(token)
+    if unverified_claims.get("scope"):
+        token_scopes = unverified_claims["scope"].split()
+        for token_scope in token_scopes:
+            if token_scope == required_scope:
+                return True
+    return False
 
-            if candidate_user is None or not check_password_hash(candidate_user.password,
-                                                                        form.password.data):
-                form.password.errors.append("Invalid credentials.")
-                return view('login', form)
 
-            login_user(candidate_user, remember=True)
-            return redirect_to('home')
-    return view('login', form)
+def requires_auth(f):
+    """Determines if the access token is valid
+    """
+    @wraps(f)
+    def decorated(*args, **kwargs):
+        # pdb.set_trace()
+        token = get_token_auth_header()
+        jsonurl = urlopen("https://"+AUTH0_DOMAIN+"/.well-known/jwks.json")
+        jwks = json.loads(jsonurl.read())
+        try:
+            unverified_header = jwt.get_unverified_header(token)
+        except jwt.JWTError:
+            raise AuthError({"code": "invalid_header",
+                            "description":
+                                "Invalid header. "
+                                "Use an RS256 signed JWT Access Token"}, 401)
+        if unverified_header["alg"] == "HS256":
+            raise AuthError({"code": "invalid_header",
+                            "description":
+                                "Invalid header. "
+                                "Use an RS256 signed JWT Access Token"}, 401)
+        rsa_key = {}
+        for key in jwks["keys"]:
+            if key["kid"] == unverified_header["kid"]:
+                rsa_key = {
+                    "kty": key["kty"],
+                    "kid": key["kid"],
+                    "use": key["use"],
+                    "n": key["n"],
+                    "e": key["e"]
+                }
+        if rsa_key:
+            try:
+                payload = jwt.decode(
+                    token,
+                    rsa_key,
+                    algorithms=ALGORITHMS,
+                    audience=AUTH0_AUDIENCE,
+                    issuer="https://"+AUTH0_DOMAIN+"/"
+                )
+            except jwt.ExpiredSignatureError:
+                raise AuthError({"code": "token_expired",
+                                "description": "token is expired"}, 401)
+            except jwt.JWTClaimsError:
+                raise AuthError({"code": "invalid_claims",
+                                "description":
+                                    "incorrect claims,"
+                                    " please check the audience and issuer"}, 401)
+            except Exception:
+                raise AuthError({"code": "invalid_header",
+                                "description":
+                                    "Unable to parse authentication"
+                                    " token."}, 400)
+
+            _app_ctx_stack.top.current_user = payload
+            return f(*args, **kwargs)
+        raise AuthError({"code": "invalid_header",
+                        "description": "Unable to find appropriate key"}, 400)
+    return decorated
+
+###
+
+# @app.route('/api/register', methods=["POST"])
+# def register():
+#     # form = RegisterForm()
+#     form=request.get_json()
+#     print(form, "HELLO")
+#     # pdb.set_trace()
+
+#     tel = form['phone_number'] #"+{0}{1}".format(form.country_code.data, form.phone_number.data)
+#     if User.query.filter(User.email == form['email']).count() > 0:
+#         # form.email.errors.append("Email address already in use.")
+#         print("Email address already in use.")
+#         return "Email address already in use."
+#     elif User.query.filter(User.phone_number == tel).count() > 0:
+#         #form.email.errors.append("Phone number already in use.")
+#         #return view('register', form)
+#         return "Phone number already in use."
+
+#     user = User(
+#             name=form['name'],
+#             email=form['email'],
+#             password=generate_password_hash(form['password']),
+#             phone_number=tel,
+#             area_code=str(tel)[0:3])
+
+#     db.session.add(user)
+#     db.session.commit()
+#     login_user(user, remember=True)
+
+#     #return redirect_to('home')
+#     return "redirect to home"
+
+
+# @app.route('/api/login', methods=["GET", "POST"])
+# def login():
+#     form = LoginForm()
+#     if request.method == 'POST':
+#         if form.validate_on_submit():
+#             candidate_user = User.query.filter(User.email == form.email.data).first()
+
+#             if candidate_user is None or not check_password_hash(candidate_user.password,
+#                                                                         form.password.data):
+#                 form.password.errors.append("Invalid credentials.")
+#                 return view('login', form)
+
+#             login_user(candidate_user, remember=True)
+#             return redirect_to('home')
+#     return view('login', form)
     
 
 
-@app.route('/logout', methods=["POST"])
-@login_required
-def logout():
-    logout_user()
-    return redirect_to('home')
+# @app.route('/logout', methods=["POST"])
+# @login_required
+# def logout():
+#     logout_user()
+#     return redirect_to('home')
 
 
 # @app.route('/', methods=['GET'])
@@ -85,9 +216,9 @@ def logout():
 #     return render_template('index.html')
 
 
-@app.route('/<path:path>', methods=['GET'])
-def any_root_path(path):
-    return render_template('index.html')
+# @app.route('/<path:path>', methods=['GET'])
+# def any_root_path(path):
+#     return render_template('index.html')
 
 
 
@@ -98,12 +229,14 @@ def any_root_path(path):
 
 
 @app.route('/api/discussions', methods=["GET"])
+@cross_origin(headers=["Content-Type", "Authorization"])
+@cross_origin(headers=["Access-Control-Allow-Origin", "*"])
+@requires_auth
 def discussions():
     discussion_profiles = DiscussionProfile.query.all()
     obj = []
     for ds in discussion_profiles:
         obj.append({'id':ds.id, 'host':ds.host.name, 'image':ds.image_url, 'description': ds.description})
-    # pdb.set_trace()
     objs=json.dumps(obj)
     return objs
 
