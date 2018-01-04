@@ -17,9 +17,15 @@ class DefaultConfig(object):
     RECAPTCHA_PUBLIC_KEY = "6Le1oTwUAAAAAFTxrBQ5y45_ZUBRAzJnheaw1UG3"
     RECAPTCHA_PRIVATE_KEY = os.environ.get("RECAPTCHA_PRIVATE_KEY")
     SQLALCHEMY_TRACK_MODIFICATIONS = False
+    REACT_APP_USERS_SERVICE_URL='http://localhost:5000'
+    BCRYPT_LOG_ROUNDS = 13
+    AUTH0_CLIENT_ID = os.environ.get("CLIENT_ID")
+    AUTH0_DOMAIN = os.environ.get("DOMAIN")
+    AUTH0_CLIENT_SECRET = os.environ.get("CLIENT_SECRET")
 
 class DevelopmentConfig(DefaultConfig):
     DEBUG = True
+    BCRYPT_LOG_ROUNDS = 4
     SQLALCHEMY_DATABASE_URI = 'postgresql://postgres:password@localhost/conversation'
 
 class HerokuConfig(DefaultConfig):
@@ -34,6 +40,7 @@ class TestConfig(DefaultConfig):
     TESTING = True
     LOGIN_DISABLED = True
     WTF_CSRF_ENABLED = False
+    BCRYPT_LOG_ROUNDS = 4
 
 
 config_env_files = {
