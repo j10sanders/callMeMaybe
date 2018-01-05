@@ -26,15 +26,15 @@ class DefaultConfig(object):
 class DevelopmentConfig(DefaultConfig):
     DEBUG = True
     BCRYPT_LOG_ROUNDS = 4
-    SQLALCHEMY_DATABASE_URI = 'postgresql://postgres:password@localhost/conversation'
+    SQLALCHEMY_DATABASE_URI = 'postgresql://postgres:password@localhost/auth'
 
 class HerokuConfig(DefaultConfig):
     DEBUG = True
-    # SQLALCHEMY_DATABASE_URI = 'postgresql://postgres:password@localhost/conversation'
+    # SQLALCHEMY_DATABASE_URI = 'postgresql://postgres:password@localhost/auth'
 
 
 class TestConfig(DefaultConfig):
-    SQLALCHEMY_DATABASE_URI = 'postgresql://postgres:password@localhost/conversation'
+    SQLALCHEMY_DATABASE_URI = 'postgresql://postgres:password@localhost/auth'
     PRESERVE_CONTEXT_ON_EXCEPTION = False
     DEBUG = True
     TESTING = True

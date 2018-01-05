@@ -20,7 +20,7 @@ from dotenv import load_dotenv, find_dotenv
 
 init_models_module(db, bcrypt, app)
 
-from cmm_flask.models.user import User, BlacklistToken
+from cmm_flask.models.user import User #, BlacklistToken
 from cmm_flask.models.discussion_profile import DiscussionProfile
 from cmm_flask.models.conversation import Conversation
 from werkzeug.security import check_password_hash, generate_password_hash
@@ -154,36 +154,40 @@ def requires_auth(f):
 
 ###
 
-# @app.route('/api/register', methods=["POST"])
-# def register():
-#     # form = RegisterForm()
-#     form=request.get_json()
-#     print(form, "HELLO")
-#     # pdb.set_trace()
+@app.route('/api/register', methods=["POST"])
+# @cross_origin(headers=["Access-Control-Allow-Origin", "*"])
+def register():
+    # form = RegisterForm()
+    form=request.get_json()
+    if User.query.filter(User.user_id == form['user_id']).count() > 0:
+        return "user previously registered."
 
-#     tel = form['phone_number'] #"+{0}{1}".format(form.country_code.data, form.phone_number.data)
-#     if User.query.filter(User.email == form['email']).count() > 0:
-#         # form.email.errors.append("Email address already in use.")
-#         print("Email address already in use.")
-#         return "Email address already in use."
-#     elif User.query.filter(User.phone_number == tel).count() > 0:
-#         #form.email.errors.append("Phone number already in use.")
-#         #return view('register', form)
-#         return "Phone number already in use."
+    if "phone_number" in form:
+        tel = form['phone_number'].replace('-', '') #"+{0}{1}".format(form.country_code.data, form.phone_number.data)
+        
+        if User.query.filter(User.phone_number == tel).count() > 0:
+            #form.email.errors.append("Phone number already in use.")
+            #return view('register', form)
+            return "Phone number already in use."
+        # db.drop_all()
+        # db.create_all()
+        user = User(
+                user_id=form['user_id'],
+                # email=form['email'],
+                # password=generate_password_hash(form['password']),
+                phone_number=tel,
+                area_code=tel[2:5]
+            )
 
-#     user = User(
-#             name=form['name'],
-#             email=form['email'],
-#             password=generate_password_hash(form['password']),
-#             phone_number=tel,
-#             area_code=str(tel)[0:3])
+        db.session.add(user)
+        db.session.commit()
+        # login_user(user, remember=True)
+        print(form, "HELLO")
+        return "done"
+        # pdb.set_trace()
 
-#     db.session.add(user)
-#     db.session.commit()
-#     login_user(user, remember=True)
-
-#     #return redirect_to('home')
-#     return "redirect to home"
+    else: 
+        return "register phone"
 
 
 # @app.route('/api/login', methods=["GET", "POST"])
