@@ -175,6 +175,9 @@ def register():
                 user_id=form['user_id'],
                 # email=form['email'],
                 # password=generate_password_hash(form['password']),
+                first_name=form['first_name'],
+                last_name=form['last_name'],
+                auth_pic=form['auth_pic'],
                 phone_number=tel,
                 area_code=tel[2:5]
             )
@@ -240,58 +243,72 @@ def discussions():
     discussion_profiles = DiscussionProfile.query.all()
     obj = []
     for ds in discussion_profiles:
-        obj.append({'id':ds.id, 'host':ds.host.name, 'image':ds.image_url, 'description': ds.description})
+        obj.append({'id':ds.id, 'first_name':ds.host.first_name, 'last_name':ds.host.last_name, 
+            'auth_pic': ds.host.auth_pic, 'image':ds.image_url, 'description': ds.description})
     objs=json.dumps(obj)
     return objs
 
+@app.route('/discussion', methods=["GET"])
+@app.route('/discussion/<discussion_id>', methods=["GET", "POST"])
+def discussion_profile(): 
+    pdb.set_trace()
+    discussion_id = request.query_string[3:] # ex) 'id=423'
+    discussion_profile = None
+    # form.discussion_id.data = discussion_id
+    if discussion_id is not None:
+        dp = DiscussionProfile.query.get(int(discussion_id))
+        profile=json.dumps({'host': dp.host.user_id, 'image': dp.image_url, 'description': dp.description,
+            'anonymous_phone_number': dp.anonymous_phone_number, 'auth_pic': dp.host.auth_pic, 'first_name':dp.host.first_name, 
+            'last_name':dp.host.last_name,
+        })
+        return profile
+    return "error"
 
-@app.route('/conversations', methods=["GET"])
-@app.route('/conversations/', methods=["POST"], defaults={'discussion_id': None})
+@app.route('/conversations', methods=["GET", "POST"])
+@app.route('/conversations/', methods=["POST"])
 @app.route('/conversations/<discussion_id>', methods=["GET", "POST"])
 def new_conversation():
     discussion_id = request.query_string[3:] # ex) 'id=423'
-    # pdb.set_trace()
+    pdb.set_trace()
     discussion_profile = None
     # form.discussion_id.data = discussion_id
+    form=request.get_json()
+    if 'phone_number' in form: #this is where I'll need truffle/Meta Mask.  May also need to send a verification text.
+        guest_phone_number = generate_password_hash(form['phone_number'])
+        discussion_profile = DiscussionProfile.query.get(int(discussion_id))
+        conversation = Conversation(form['message'], discussion_profile, guest_phone_number)
+        db.session.add(conversation)
+        db.session.commit()
 
-    if request.method == 'POST': #this is where I'll need truffle/Meta Mask.  May also need to send a verification text.
-        if form.validate_on_submit():
-            # guest = User.query.get(current_user.get_id())
+        conversation.notify_host()
 
-            #guest_phone_number = form.phone_number.data
-            guest_phone_number = generate_password_hash(form.message.phone_number)
-            discussion_profile = DiscussionProfile.query.get(form.discussion_id.data)
-            conversation = Conversation(form.message.data, discussion_profile, guest_phone_number)
-            db.session.add(conversation)
-            db.session.commit()
-
-            conversation.notify_host()
-
-            return redirect_to('discussions')
-
-    if discussion_id is not None:
-        dp = DiscussionProfile.query.get(int(discussion_id))
-    profile=json.dumps({'host': dp.host.name, 'image': dp.image_url, 'description': dp.description,
-        'anonymous_phone_number': dp.anonymous_phone_number
-    })
-    return profile
+        return 'whitelisted'
+    return "error"
 
 
-@app.route('/discussions/new', methods=["GET", "POST"])
-@login_required
+@app.route('/api/discussions/new', methods=["GET", "POST"])
+# @cross_origin(headers=["Content-Type", "Authorization"])
+@cross_origin(headers=["Access-Control-Allow-Origin", "*"])
+# @login_required
 def new_discussion():
-    form = DiscussionProfileForm()
+    form=request.get_json()
     if request.method == 'POST':
-        if form.validate_on_submit():
-            host = User.query.get(current_user.get_id())
-            # anonymous_phone_number = DiscussionProfile.buy_number() #missing required self.
-            discussion = DiscussionProfile(form.description.data, form.image_url.data, host) #need to push an anon phone # here.
-            discussion.anonymous_phone_number = discussion.buy_number().phone_number
-            db.session.add(discussion)
-            db.session.commit()
-            return redirect_to('discussions')
+        host = User.query.filter(User.user_id == form['user_id']).one()
+        # host = session.query(User).filter_by(user_id=form['user_id']).one()
+        # anonymous_phone_number = DiscussionProfile.buy_number() #missing required self.
+        discussion = DiscussionProfile(
+            description = form['description'], 
+            image_url = form['image_url'], 
+            host = host,
+            otherProfile = form['otherProfile'],
+            price = float(form['price'])
+        ) #need to push an anon phone # here.
+        discussion.anonymous_phone_number = discussion.buy_number().phone_number
+        db.session.add(discussion)
+        db.session.commit()
+        return 'success'
 
-    return view('discussion_new', form)
+    return "error"
 
 @app.route('/discussions/test_new', methods=["GET", "POST"])
 @login_required
@@ -315,7 +332,8 @@ def test_new_discussion():
 # @app.route('/conversations/<discussion_id>', methods=["GET", "POST"])
 # def new_conversation(discussion_id):
 #     discussion_profile = None
-#     form = ConversationForm()
+#     form=request.get_json()
+    
 #     form.discussion_id.data = discussion_id
 
 #     if request.method == 'POST': #this is where I'll need truffle/Meta Mask.  May also need to send a verification text.
@@ -331,12 +349,12 @@ def test_new_discussion():
 
 #             conversation.notify_host()
 
-#             return redirect_to('discussions')
+#             return 'notifying host'
 
 #     if discussion_id is not None:
 #         discussion_profile = DiscussionProfile.query.get(discussion_id)
 
-#     return view_with_params('conversation', discussion_profile=discussion_profile, form=form)
+#     return 'go back to discussion page'
 
 
 # @app.route('/conversations', methods=["GET"])
@@ -380,6 +398,7 @@ def confirm_conversation():
 
 @app.route('/exchange/sms', methods=["POST"])
 def exchange_sms():
+    pdb.set_trace()
     form = ExchangeForm()
     outgoing_number = _gather_outgoing_phone_number(form.From.data, form.To.data)
 

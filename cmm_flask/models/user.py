@@ -12,30 +12,25 @@ class User(db.Model):
 
     id = db.Column(db.Integer, primary_key=True, autoincrement=True)
     user_id = db.Column(db.String, nullable=False)
-    # first_name = db.Column(db.String, nullable=False, server_default="default first name")
-    # last_name = db.Column(db.String, nullable=False, server_default="default last name")
-    # email = db.Column(db.String(255), unique=True, nullable=False)
-    # password = db.Column(db.String(255), nullable=False)
+    first_name = db.Column(db.String, nullable=False)
+    last_name = db.Column(db.String, nullable=False)
     registered_on = db.Column(db.DateTime, nullable=True)
     phone_number = db.Column(db.String, nullable=True)
     area_code = db.Column(db.String, nullable=False)
     admin = db.Column(db.Boolean, nullable=False, default=False)
-
+    auth_pic = db.Column(db.String, nullable=True)
     #conversations = db.relationship("Conversation", back_populates="guest")
     discussion_profiles = db.relationship("DiscussionProfile", back_populates="host")
 
-    def __init__(self, user_id, area_code, phone_number, admin=False):
-        # self.email = email
-        # self.name = name
-        # self.password = bcrypt.generate_password_hash(
-        #     password, app.config.get('BCRYPT_LOG_ROUNDS')
-        # ).decode()
+    def __init__(self, user_id, area_code, phone_number, first_name, last_name, auth_pic, admin=False):
+        self.first_name = first_name
+        self.last_name = last_name
         self.user_id = user_id
         self.registered_on = datetime.datetime.now()
         self.admin = admin
         self.phone_number = phone_number
         self.area_code = area_code
-        
+        self.auth_pic = auth_pic 
 
     def is_authenticated(self):
         return True

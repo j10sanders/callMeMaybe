@@ -37,16 +37,19 @@ class Conversation(DB.Model):
 
     def notify_host(self):
         self._send_message(self.discussion_profile.host.phone_number,
-                           render_template('messages/sms_host.txt',
-                                           #name=self.guest.name,
-                                           description=self.discussion_profile.description,
-                                           message=self.message))
+                           # render_template('messages/sms_host.txt',
+                           #                 #name=self.guest.name,
+                           #                 description=self.discussion_profile.description,
+                           #                 message=self.message))
+                           "hello.  Reply [accept] or [reject]")
 
     def notify_guest(self):
         self._send_message(self.guest_phone_number,
-                           render_template('messages/sms_guest.txt',
-                                           description=self.discussion_profile.description,
-                                           status=self.status))
+                           # render_template('messages/sms_guest.txt',
+                           #                 description=self.discussion_profile.description,
+                           #                 status=self.status))
+                          "hello guest. your call was something")
+
 
     def _send_message(self, to, message): 
         self._get_twilio_client().messages \

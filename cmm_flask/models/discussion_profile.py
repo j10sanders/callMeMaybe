@@ -11,24 +11,27 @@ class DiscussionProfile(db.Model):
     id = db.Column(db.Integer, primary_key=True)
     description = db.Column(db.String, nullable=False)
     image_url = db.Column(db.String, nullable=False)
-
+    otherProfile = db.Column(db.String, nullable=True)
+    price = db.Column(db.Float, nullable=False)
     host_id = db.Column(db.Integer, db.ForeignKey('users.id'))
     host = db.relationship("User", back_populates="discussion_profiles")
     conversations = db.relationship("Conversation", back_populates="discussion_profile", passive_deletes=True)
     anonymous_phone_number = db.Column(db.String, nullable=True)
 
-    def __init__(self, description, image_url, host):
+    def __init__(self, description, image_url, host, otherProfile, price):
         self.description = description
         self.image_url = image_url
         self.host = host
+        self.otherProfile = otherProfile
+        self.price = price
 
     def __repr__(self):
         return '<DiscussionProfile {0} {1}>'.format(self.id, self.description)
 
-    def buy_number(self, area_code=917):
+    def buy_number(self):
         numbers = self._get_twilio_client().available_phone_numbers("US") \
                                            .local \
-                                           .list(area_code=area_code,
+                                           .list(
                                                  sms_enabled=True,
                                                  voice_enabled=True)
 

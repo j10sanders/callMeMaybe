@@ -1,13 +1,13 @@
 """empty message
 
-Revision ID: 4231088d54d2
+Revision ID: 1bece49284fd
 Revises: None
-Create Date: 2018-01-05 15:48:11.196764
+Create Date: 2018-01-06 10:38:06.124680
 
 """
 
 # revision identifiers, used by Alembic.
-revision = '4231088d54d2'
+revision = '1bece49284fd'
 down_revision = None
 
 from alembic import op
@@ -19,6 +19,8 @@ def upgrade():
     op.create_table('users',
     sa.Column('id', sa.Integer(), nullable=False),
     sa.Column('user_id', sa.String(), nullable=False),
+    sa.Column('first_name', sa.String(), nullable=False),
+    sa.Column('last_name', sa.String(), nullable=False),
     sa.Column('registered_on', sa.DateTime(), nullable=True),
     sa.Column('phone_number', sa.String(), nullable=True),
     sa.Column('area_code', sa.String(), nullable=False),
@@ -29,6 +31,8 @@ def upgrade():
     sa.Column('id', sa.Integer(), nullable=False),
     sa.Column('description', sa.String(), nullable=False),
     sa.Column('image_url', sa.String(), nullable=False),
+    sa.Column('otherProfile', sa.String(), nullable=True),
+    sa.Column('price', sa.Float(), nullable=False),
     sa.Column('host_id', sa.Integer(), nullable=True),
     sa.Column('anonymous_phone_number', sa.String(), nullable=True),
     sa.ForeignKeyConstraint(['host_id'], ['users.id'], ),
