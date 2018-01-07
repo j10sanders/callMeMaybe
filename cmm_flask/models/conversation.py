@@ -21,6 +21,7 @@ class Conversation(DB.Model):
     discussion_profile = DB.relationship("DiscussionProfile", back_populates="conversations")
 
     def __init__(self, message, discussion_profile, guest_phone_number):
+        pdb.set_trace()
         self.message = message
         self.guest_phone_number = guest_phone_number
         self.discussion_profile = discussion_profile
@@ -44,11 +45,13 @@ class Conversation(DB.Model):
                            "hello.  Reply [accept] or [reject]")
 
     def notify_guest(self):
+        pdb.set_trace()
         self._send_message(self.guest_phone_number,
                            # render_template('messages/sms_guest.txt',
                            #                 description=self.discussion_profile.description,
                            #                 status=self.status))
                           "hello guest. your call was something")
+        ### need error handling.  When this fails I should know, and it should be save to this conversation.
 
 
     def _send_message(self, to, message): 
@@ -58,4 +61,5 @@ class Conversation(DB.Model):
                                          body=message)
 
     def _get_twilio_client(self):
+        print("SID, token", Client(account_sid()), Client(auth_token()))
         return Client(account_sid(), auth_token())

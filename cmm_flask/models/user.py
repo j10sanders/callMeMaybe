@@ -6,7 +6,6 @@ import jwt
 db = app_db()
 # bcrypt = bcrypt()
 
-
 class User(db.Model):
     __tablename__ = "users"
 

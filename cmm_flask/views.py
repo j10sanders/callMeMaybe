@@ -97,7 +97,6 @@ def requires_auth(f):
     """
     @wraps(f)
     def decorated(*args, **kwargs):
-        # pdb.set_trace()
         token = get_token_auth_header()
         jsonurl = urlopen("https://"+AUTH0_DOMAIN+"/.well-known/jwks.json")
         jwks = json.loads(jsonurl.read())
@@ -161,7 +160,6 @@ def register():
     form=request.get_json()
     if User.query.filter(User.user_id == form['user_id']).count() > 0:
         return "user previously registered."
-
     if "phone_number" in form:
         tel = form['phone_number'].replace('-', '') #"+{0}{1}".format(form.country_code.data, form.phone_number.data)
         
@@ -251,7 +249,6 @@ def discussions():
 @app.route('/discussion', methods=["GET"])
 @app.route('/discussion/<discussion_id>', methods=["GET", "POST"])
 def discussion_profile(): 
-    pdb.set_trace()
     discussion_id = request.query_string[3:] # ex) 'id=423'
     discussion_profile = None
     # form.discussion_id.data = discussion_id
@@ -269,14 +266,14 @@ def discussion_profile():
 @app.route('/conversations/<discussion_id>', methods=["GET", "POST"])
 def new_conversation():
     discussion_id = request.query_string[3:] # ex) 'id=423'
-    pdb.set_trace()
     discussion_profile = None
     # form.discussion_id.data = discussion_id
     form=request.get_json()
     if 'phone_number' in form: #this is where I'll need truffle/Meta Mask.  May also need to send a verification text.
-        guest_phone_number = generate_password_hash(form['phone_number'])
+        # guest_phone_number = generate_password_hash(form['phone_number'])
+        guest_phone_number = form['phone_number'].replace('-', '')
         discussion_profile = DiscussionProfile.query.get(int(discussion_id))
-        conversation = Conversation(form['message'], discussion_profile, guest_phone_number)
+        conversation = Conversation(form['message'], discussion_profile, guest_phone_number=form['phone_number'].replace('-', ''))
         db.session.add(conversation)
         db.session.commit()
 
@@ -398,7 +395,6 @@ def confirm_conversation():
 
 @app.route('/exchange/sms', methods=["POST"])
 def exchange_sms():
-    pdb.set_trace()
     form = ExchangeForm()
     outgoing_number = _gather_outgoing_phone_number(form.From.data, form.To.data)
 
@@ -444,13 +440,12 @@ def load_user(id):
 
 def _gather_outgoing_phone_number(incoming_phone_number, anonymous_phone_number):
     #for all numbers in conversation?
-
-
+    print("gathering")
     vacay = Conversation.query \
         .filter(Conversation.discussion_profile.anonymous_phone_number == anonymous_phone_number) \
         .first()
-    if check_password_hash(conversation.guest_phone_number, incoming_phone_number):
-    # if conversation.guest_phone_number == incoming_phone_number:
+    # if check_password_hash(conversation.guest_phone_number, incoming_phone_number):
+    if conversation.guest_phone_number == incoming_phone_number:
         return conversation.discussion_profile.host.phone_number
 
     return conversation.guest_phone_number
@@ -474,7 +469,6 @@ class RegisterAPI(MethodView):
     """
 
     def post(self):
-        pdb.set_trace()
         # get the post data
         post_data = request.get_json()
         # check if user already exists
