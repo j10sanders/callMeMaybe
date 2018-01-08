@@ -234,9 +234,9 @@ def register():
 
 
 @app.route('/api/discussions', methods=["GET"])
-@cross_origin(headers=["Content-Type", "Authorization"])
-@cross_origin(headers=["Access-Control-Allow-Origin", "*"])
-@requires_auth
+# @cross_origin(headers=["Content-Type", "Authorization"])
+# @cross_origin(headers=["Access-Control-Allow-Origin", "*"])
+# @requires_auth
 def discussions():
     discussion_profiles = DiscussionProfile.query.all()
     obj = []
