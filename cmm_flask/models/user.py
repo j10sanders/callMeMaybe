@@ -20,6 +20,7 @@ class User(db.Model):
     auth_pic = db.Column(db.String, nullable=True)
     #conversations = db.relationship("Conversation", back_populates="guest")
     discussion_profiles = db.relationship("DiscussionProfile", back_populates="host")
+    timeslots=db.relationship("TimeSlot", back_populates="host")
 
     def __init__(self, user_id, area_code, phone_number, first_name, last_name, auth_pic, admin=False):
         self.first_name = first_name
@@ -29,7 +30,7 @@ class User(db.Model):
         self.admin = admin
         self.phone_number = phone_number
         self.area_code = area_code
-        self.auth_pic = auth_pic 
+        self.auth_pic = auth_pic
 
     def is_authenticated(self):
         return True

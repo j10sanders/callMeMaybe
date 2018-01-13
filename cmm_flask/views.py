@@ -23,9 +23,11 @@ init_models_module(db, bcrypt, app)
 from cmm_flask.models.user import User #, BlacklistToken
 from cmm_flask.models.discussion_profile import DiscussionProfile
 from cmm_flask.models.conversation import Conversation
+from cmm_flask.models.timeslot import TimeSlot
 from werkzeug.security import check_password_hash, generate_password_hash
 from werkzeug.exceptions import Forbidden
 import pdb
+import datetime
 
 ENV_FILE = find_dotenv()
 if ENV_FILE:
@@ -153,6 +155,8 @@ def requires_auth(f):
 
 ###
 
+
+
 @app.route('/api/register', methods=["POST"])
 # @cross_origin(headers=["Access-Control-Allow-Origin", "*"])
 def register():
@@ -191,48 +195,6 @@ def register():
         return "register phone"
 
 
-# @app.route('/api/login', methods=["GET", "POST"])
-# def login():
-#     form = LoginForm()
-#     if request.method == 'POST':
-#         if form.validate_on_submit():
-#             candidate_user = User.query.filter(User.email == form.email.data).first()
-
-#             if candidate_user is None or not check_password_hash(candidate_user.password,
-#                                                                         form.password.data):
-#                 form.password.errors.append("Invalid credentials.")
-#                 return view('login', form)
-
-#             login_user(candidate_user, remember=True)
-#             return redirect_to('home')
-#     return view('login', form)
-    
-
-
-# @app.route('/logout', methods=["POST"])
-# @login_required
-# def logout():
-#     logout_user()
-#     return redirect_to('home')
-
-
-# @app.route('/', methods=['GET'])
-# def index():
-#     return render_template('index.html')
-
-
-# @app.route('/<path:path>', methods=['GET'])
-# def any_root_path(path):
-#     return render_template('index.html')
-
-
-
-
-# @app.route('/home', methods=["GET"])
-# def home():
-#     return render_template('./src/home.html')
-
-
 @app.route('/api/discussions', methods=["GET"])
 # @cross_origin(headers=["Content-Type", "Authorization"])
 # @cross_origin(headers=["Access-Control-Allow-Origin", "*"])
@@ -242,7 +204,8 @@ def discussions():
     obj = []
     for ds in discussion_profiles:
         obj.append({'id':ds.id, 'first_name':ds.host.first_name, 'last_name':ds.host.last_name, 
-            'auth_pic': ds.host.auth_pic, 'image':ds.image_url, 'description': ds.description})
+            'auth_pic': ds.host.auth_pic, 'image':ds.image_url, 'description': ds.description,
+            })
     objs=json.dumps(obj)
     return objs
 
@@ -281,6 +244,48 @@ def new_conversation():
 
         return 'whitelisted'
     return "error"
+
+
+@cross_origin(headers=["Access-Control-Allow-Origin", "*"])
+@app.route('/api/savetimeslots', methods=["POST"])
+def savetimeslots():
+    form=request.get_json()
+    if request.method == 'POST':
+        host = User.query.filter(User.user_id == form['user_id']).one()
+        # pdb.set_trace()
+        times = form['times']
+        for i in times:
+            timeslot = TimeSlot(
+                start_time = i['startDate'],
+                end_time = i['endDate'],
+                host = host,
+            )
+            db.session.add(timeslot)
+            db.session.commit()
+        return 'success'
+    return 'error'
+
+
+@cross_origin(headers=["Access-Control-Allow-Origin", "*"])
+@app.route('/api/gettimeslots/', methods=["GET"])
+# @app.route('/api/gettimeslots/<discussion_id>', methods=["GET", "POST"])
+def gettimeslots():
+    form=request.get_json()
+    discussion_id = request.query_string[3:]
+    discussion_profile = DiscussionProfile.query.get(int(discussion_id))
+    host = discussion_profile.host
+    obj = []
+    pdb.set_trace()
+    for i in host.timeslots:
+        pdb.set_trace()
+        if datetime.datetime.now() < i.end_time:
+            obj.append({'start_time': i.start_time.isoformat(), 'end_time': i.end_time.isoformat()})
+
+    times=json.dumps(obj)
+    print(times)
+    return times
+
+    # return 'error'
 
 
 @app.route('/api/discussions/new', methods=["GET", "POST"])
@@ -322,53 +327,6 @@ def test_new_discussion():
             return redirect_to('discussions')
 
     return view('discussion_new', form)
-
-
-
-# @app.route('/conversations/', methods=["POST"], defaults={'discussion_id': None})
-# @app.route('/conversations/<discussion_id>', methods=["GET", "POST"])
-# def new_conversation(discussion_id):
-#     discussion_profile = None
-#     form=request.get_json()
-    
-#     form.discussion_id.data = discussion_id
-
-#     if request.method == 'POST': #this is where I'll need truffle/Meta Mask.  May also need to send a verification text.
-#         if form.validate_on_submit():
-#             # guest = User.query.get(current_user.get_id())
-
-#             #guest_phone_number = form.phone_number.data
-#             guest_phone_number = generate_password_hash(form.message.phone_number)
-#             discussion_profile = DiscussionProfile.query.get(form.discussion_id.data)
-#             conversation = Conversation(form.message.data, discussion_profile, guest_phone_number)
-#             db.session.add(conversation)
-#             db.session.commit()
-
-#             conversation.notify_host()
-
-#             return 'notifying host'
-
-#     if discussion_id is not None:
-#         discussion_profile = DiscussionProfile.query.get(discussion_id)
-
-#     return 'go back to discussion page'
-
-
-# @app.route('/conversations', methods=["GET"])
-# def conversations():
-#     user = User.query.get(current_user.get_id())
-#     conversations_as_host = Conversation.query \
-#         .filter(DiscussionProfile.host_id == current_user.get_id() and len(DiscussionProfile.conversations) > 0) \
-#         .join(DiscussionProfile) \
-#         .filter(Conversation.discussion_profile_id == DiscussionProfile.id) \
-#         .all()
-
-#     conversations_as_guest = user.conversations
-
-#     return view_with_params('conversations',
-#                             conversations_as_guest=conversations_as_guest,
-#                             conversations_as_host=conversations_as_host)
-
 
 @app.route('/conversations/confirm', methods=["POST"])
 def confirm_conversation():
