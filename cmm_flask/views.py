@@ -196,9 +196,9 @@ def register():
 
 
 @app.route('/api/discussions', methods=["GET"])
-# @cross_origin(headers=["Content-Type", "Authorization"])
+@cross_origin(headers=["Content-Type", "Authorization"])
 # @cross_origin(headers=["Access-Control-Allow-Origin", "*"])
-# @requires_auth
+@requires_auth
 def discussions():
     discussion_profiles = DiscussionProfile.query.all()
     obj = []
@@ -208,6 +208,25 @@ def discussions():
             })
     objs=json.dumps(obj)
     return objs
+
+@app.route('/api/mydiscussions', methods=["GET", "POST"])
+def mydiscussions(): 
+    form=request.get_json()
+    host = User.query.filter(User.user_id == form['user_id']).one()
+    dps = host.discussion_profiles
+    if len(dps) > 0:
+        obj = []
+        for ds in dps:
+            obj.append({'id':ds.id, 'first_name':ds.host.first_name, 'last_name':ds.host.last_name, 
+                'auth_pic': ds.host.auth_pic, 'image':ds.image_url, 'description': ds.description,
+                })
+        objs=json.dumps(obj)
+        return objs
+    else:
+        return "user has no discussion profiles"
+    # form.discussion_id.data = discussion_id
+
+    return "error"
 
 @app.route('/discussion', methods=["GET"])
 @app.route('/discussion/<discussion_id>', methods=["GET", "POST"])
@@ -223,6 +242,7 @@ def discussion_profile():
         })
         return profile
     return "error"
+
 
 @app.route('/conversations', methods=["GET", "POST"])
 @app.route('/conversations/', methods=["POST"])
@@ -275,9 +295,7 @@ def gettimeslots():
     discussion_profile = DiscussionProfile.query.get(int(discussion_id))
     host = discussion_profile.host
     obj = []
-    pdb.set_trace()
     for i in host.timeslots:
-        pdb.set_trace()
         if datetime.datetime.now() < i.end_time:
             obj.append({'start_time': i.start_time.isoformat(), 'end_time': i.end_time.isoformat()})
 
