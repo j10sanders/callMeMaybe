@@ -1,6 +1,5 @@
-from cmm_flask import db, bcrypt, app, login_manager
+from cmm_flask import db, bcrypt, app
 from flask import session, g, request, flash, Blueprint, render_template, Blueprint, make_response, jsonify, _app_ctx_stack
-from flask.ext.login import login_user, logout_user, current_user, login_required
 import twilio.twiml
 from flask_wtf import RecaptchaField
 from twilio.twiml.messaging_response import Message, MessagingResponse
@@ -20,7 +19,7 @@ from dotenv import load_dotenv, find_dotenv
 
 init_models_module(db, bcrypt, app)
 
-from cmm_flask.models.user import User #, BlacklistToken
+from cmm_flask.models.user import User
 from cmm_flask.models.discussion_profile import DiscussionProfile
 from cmm_flask.models.conversation import Conversation
 from cmm_flask.models.timeslot import TimeSlot
@@ -198,7 +197,7 @@ def register():
 @app.route('/api/discussions', methods=["GET"])
 @cross_origin(headers=["Content-Type", "Authorization"])
 # @cross_origin(headers=["Access-Control-Allow-Origin", "*"])
-@requires_auth
+# @requires_auth
 def discussions():
     discussion_profiles = DiscussionProfile.query.all()
     obj = []
@@ -309,7 +308,6 @@ def gettimeslots():
 @app.route('/api/discussions/new', methods=["GET", "POST"])
 # @cross_origin(headers=["Content-Type", "Authorization"])
 @cross_origin(headers=["Access-Control-Allow-Origin", "*"])
-# @login_required
 def new_discussion():
     form=request.get_json()
     if request.method == 'POST':
@@ -331,7 +329,6 @@ def new_discussion():
     return "error"
 
 @app.route('/discussions/test_new', methods=["GET", "POST"])
-@login_required
 def test_new_discussion():
     form = DiscussionProfileForm()
     if request.method == 'POST':
@@ -396,24 +393,6 @@ def exchange_voice():
     return twiml(response)
 
 
-# controller utils
-@app.before_request
-def before_request():
-    g.user = current_user
-    uri_pattern = request.url_rule
-    if current_user.is_authenticated and (
-                        uri_pattern == '/' or uri_pattern == '/login' or uri_pattern == '/register'):
-        redirect_to('home')
-
-
-@login_manager.user_loader
-def load_user(id):
-    try:
-        return User.query.get(id)
-    except:
-        return None
-
-
 def _gather_outgoing_phone_number(incoming_phone_number, anonymous_phone_number):
     #for all numbers in conversation?
     print("gathering")
@@ -434,201 +413,3 @@ def _respond_message(message):
     # response = twilio.twiml.Response()
     # response.message(message)
     return response
-
-'''blueprint views: '''
-
-auth_blueprint = Blueprint('auth', __name__)
-
-class RegisterAPI(MethodView):
-    """
-    User Registration Resource
-    """
-
-    def post(self):
-        # get the post data
-        post_data = request.get_json()
-        # check if user already exists
-        user = User.query.filter_by(email=post_data.get('email')).first()
-        if not user:
-            try:
-                user = User(
-                    email=post_data.get('email'),
-                    password=post_data.get('password')
-                )
-
-                # insert the user
-                db.session.add(user)
-                db.session.commit()
-                # generate the auth token
-                auth_token = user.encode_auth_token(user.id)
-                responseObject = {
-                    'status': 'success',
-                    'message': 'Successfully registered.',
-                    'auth_token': auth_token.decode()
-                }
-                return make_response(jsonify(responseObject)), 201
-            except Exception as e:
-                responseObject = {
-                    'status': 'fail',
-                    'message': 'Some error occurred. Please try again.'
-                }
-                return make_response(jsonify(responseObject)), 401
-        else:
-            responseObject = {
-                'status': 'fail',
-                'message': 'User already exists. Please Log in.',
-            }
-            return make_response(jsonify(responseObject)), 202
-
-class LoginAPI(MethodView):
-    """
-    User Login Resource
-    """
-    def post(self):
-        # get the post data
-        post_data = request.get_json()
-        try:
-            # fetch the user data
-            user = User.query.filter_by(
-                email=post_data.get('email')
-            ).first()
-            if user and bcrypt.check_password_hash(
-                user.password, post_data.get('password')
-            ):
-                auth_token = user.encode_auth_token(user.id)
-                if auth_token:
-                    responseObject = {
-                        'status': 'success',
-                        'message': 'Successfully logged in.',
-                        'auth_token': auth_token.decode()
-                    }
-                    return make_response(jsonify(responseObject)), 200
-            else:
-                responseObject = {
-                    'status': 'fail',
-                    'message': 'User does not exist.'
-                }
-                return make_response(jsonify(responseObject)), 404
-        except Exception as e:
-            print(e)
-            responseObject = {
-                'status': 'fail',
-                'message': 'Try again'
-            }
-            return make_response(jsonify(responseObject)), 500
-
-class UserAPI(MethodView):
-    """
-    User Resource
-    """
-    def get(self):
-        # get the auth token
-        auth_header = request.headers.get('Authorization')
-        if auth_header:
-            try:
-                auth_token = auth_header.split(" ")[1]
-            except IndexError:
-                responseObject = {
-                    'status': 'fail',
-                    'message': 'Bearer token malformed.'
-                }
-                return make_response(jsonify(responseObject)), 401
-        else:
-            auth_token = ''
-        if auth_token:
-            resp = User.decode_auth_token(auth_token)
-            if not isinstance(resp, str):
-                user = User.query.filter_by(id=resp).first()
-                responseObject = {
-                    'status': 'success',
-                    'data': {
-                        'user_id': user.id,
-                        'email': user.email,
-                        'admin': user.admin,
-                        'registered_on': user.registered_on
-                    }
-                }
-                return make_response(jsonify(responseObject)), 200
-            responseObject = {
-                'status': 'fail',
-                'message': resp
-            }
-            return make_response(jsonify(responseObject)), 401
-        else:
-            responseObject = {
-                'status': 'fail',
-                'message': 'Provide a valid auth token.'
-            }
-            return make_response(jsonify(responseObject)), 401
-
-class LogoutAPI(MethodView):
-    """
-    Logout Resource
-    """
-    def post(self):
-        # get auth token
-        auth_header = request.headers.get('Authorization')
-        if auth_header:
-            auth_token = auth_header.split(" ")[1]
-        else:
-            auth_token = ''
-        if auth_token:
-            resp = User.decode_auth_token(auth_token)
-            if not isinstance(resp, str):
-                # mark the token as blacklisted
-                blacklist_token = BlacklistToken(token=auth_token)
-                try:
-                    # insert the token
-                    db.session.add(blacklist_token)
-                    db.session.commit()
-                    responseObject = {
-                        'status': 'success',
-                        'message': 'Successfully logged out.'
-                    }
-                    return make_response(jsonify(responseObject)), 200
-                except Exception as e:
-                    responseObject = {
-                        'status': 'fail',
-                        'message': e
-                    }
-                    return make_response(jsonify(responseObject)), 200
-            else:
-                responseObject = {
-                    'status': 'fail',
-                    'message': resp
-                }
-                return make_response(jsonify(responseObject)), 401
-        else:
-            responseObject = {
-                'status': 'fail',
-                'message': 'Provide a valid auth token.'
-            }
-            return make_response(jsonify(responseObject)), 403
-
-# define the API resources
-registration_view = RegisterAPI.as_view('register_api')
-login_view = LoginAPI.as_view('login_api')
-user_view = UserAPI.as_view('user_api')
-logout_view = LogoutAPI.as_view('logout_api')
-
-# add Rules for API Endpoints
-auth_blueprint.add_url_rule(
-    '/auth/register',
-    view_func=registration_view,
-    methods=['POST']
-)
-auth_blueprint.add_url_rule(
-    '/auth/login',
-    view_func=login_view,
-    methods=['POST']
-)
-auth_blueprint.add_url_rule(
-    '/auth/status',
-    view_func=user_view,
-    methods=['GET']
-)
-auth_blueprint.add_url_rule(
-    '/auth/logout',
-    view_func=logout_view,
-    methods=['POST']
-)
