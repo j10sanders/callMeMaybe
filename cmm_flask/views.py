@@ -245,7 +245,10 @@ def discussions():
 @app.route('/api/mydiscussions', methods=["GET"])
 @cross_origin(headers=["Content-Type", "Authorization"])
 def mydiscussions(): 
-    user_id = get_user_id(request.headers.get("Authorization", None))
+    try:
+        user_id = get_user_id(request.headers.get("Authorization", None))
+    except AttributeError:
+        user_id = "nope"
     host = User.query.filter(User.user_id == user_id).one()
     dps = host.discussion_profiles
     if len(dps) > 0:
@@ -258,21 +261,26 @@ def mydiscussions():
         return objs
     else:
         return "user has no discussion profiles"
-    # form.discussion_id.data = discussion_id
-
     return "error"
 
 @app.route('/discussion', methods=["GET"])
-@app.route('/discussion/<discussion_id>', methods=["GET", "POST"])
+@app.route('/discussion/<discussion_id>', methods=["GET"])
+@cross_origin(headers=["Content-Type", "Authorization"])
 def discussion_profile(): 
+    try:
+        user_id = get_user_id(request.headers.get("Authorization", None))
+    except AttributeError:
+        user_id = "nope"
     discussion_id = request.query_string[3:] # ex) 'id=423'
     discussion_profile = None
-    # form.discussion_id.data = discussion_id
     if discussion_id is not None:
         dp = DiscussionProfile.query.get(int(discussion_id))
+        is_users = False
+        if dp.host.user_id == user_id:
+            is_users = True
         profile=json.dumps({'host': dp.host.user_id, 'image': dp.image_url, 'description': dp.description,
             'anonymous_phone_number': dp.anonymous_phone_number, 'auth_pic': dp.host.auth_pic, 'first_name':dp.host.first_name, 
-            'last_name':dp.host.last_name,
+            'last_name':dp.host.last_name, 'is_users': is_users
         })
         return profile
     return "error"
