@@ -1,5 +1,5 @@
 from cmm_flask import db, bcrypt, app
-from flask import session, g, request, flash, Blueprint, render_template, Blueprint, make_response, jsonify, _app_ctx_stack
+from flask import session, g, request, flash, render_template, make_response, jsonify, _app_ctx_stack
 import twilio.twiml
 from flask_wtf import RecaptchaField
 from twilio.twiml.messaging_response import Message, MessagingResponse
@@ -35,7 +35,6 @@ AUTH0_DOMAIN = env.get("AUTH0_DOMAIN")
 AUTH0_AUDIENCE = 'https://jonsanders.auth0.com/api/v2/'
 ALGORITHMS = ["RS256"]
 
-auth_blueprint = Blueprint('auth', __name__)
 
 ###
 class AuthError(Exception):
@@ -91,6 +90,7 @@ def requires_scope(required_scope):
             if token_scope == required_scope:
                 return True
     return False
+
 
 
 def requires_auth(f):
@@ -185,14 +185,47 @@ def register():
 
         db.session.add(user)
         db.session.commit()
-        # login_user(user, remember=True)
         print(form, "HELLO")
         return "done"
-        # pdb.set_trace()
 
     else: 
         return "register phone"
 
+def get_user_id(t):
+    s_t = t.split()
+    token = s_t[1]
+    jsonurl = urlopen("https://"+AUTH0_DOMAIN+"/.well-known/jwks.json")
+    jwks = json.loads(jsonurl.read())
+    try:
+        unverified_header = jwt.get_unverified_header(token)
+    except jwt.JWTError:
+        raise AuthError({"code": "invalid_header",
+                        "description":
+                            "Invalid header. "
+                            "Use an RS256 signed JWT Access Token"}, 401)
+    if unverified_header["alg"] == "HS256":
+        raise AuthError({"code": "invalid_header",
+                        "description":
+                            "Invalid header. "
+                            "Use an RS256 signed JWT Access Token"}, 401)
+    rsa_key = {}
+    for key in jwks["keys"]:
+        if key["kid"] == unverified_header["kid"]:
+            rsa_key = {
+                "kty": key["kty"],
+                "kid": key["kid"],
+                "use": key["use"],
+                "n": key["n"],
+                "e": key["e"]
+            }
+    payload = jwt.decode(
+        token,
+        rsa_key,
+        algorithms=ALGORITHMS,
+        audience=AUTH0_AUDIENCE,
+        issuer="https://"+AUTH0_DOMAIN+"/"
+    )
+    return payload['sub']
 
 @app.route('/api/discussions', methods=["GET"])
 @cross_origin(headers=["Content-Type", "Authorization"])
@@ -208,10 +241,12 @@ def discussions():
     objs=json.dumps(obj)
     return objs
 
-@app.route('/api/mydiscussions', methods=["GET", "POST"])
+
+@app.route('/api/mydiscussions', methods=["GET"])
+@cross_origin(headers=["Content-Type", "Authorization"])
 def mydiscussions(): 
-    form=request.get_json()
-    host = User.query.filter(User.user_id == form['user_id']).one()
+    user_id = get_user_id(request.headers.get("Authorization", None))
+    host = User.query.filter(User.user_id == user_id).one()
     dps = host.discussion_profiles
     if len(dps) > 0:
         obj = []
@@ -271,7 +306,6 @@ def savetimeslots():
     form=request.get_json()
     if request.method == 'POST':
         host = User.query.filter(User.user_id == form['user_id']).one()
-        # pdb.set_trace()
         times = form['times']
         for i in times:
             timeslot = TimeSlot(
