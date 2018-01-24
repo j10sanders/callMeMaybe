@@ -286,6 +286,68 @@ def discussion_profile():
     return "error"
 
 
+@app.route('/api/discussions/new', methods=["GET", "POST"])
+# @cross_origin(headers=["Content-Type", "Authorization"])
+@cross_origin(headers=["Access-Control-Allow-Origin", "*"])
+def new_discussion():
+    form=request.get_json()
+    if request.method == 'POST':
+        host = User.query.filter(User.user_id == form['user_id']).one()
+        # host = session.query(User).filter_by(user_id=form['user_id']).one()
+        # anonymous_phone_number = DiscussionProfile.buy_number() #missing required self.
+        discussion = DiscussionProfile(
+            description = form['description'], 
+            image_url = form['image_url'], 
+            host = host,
+            otherProfile = form['otherProfile'],
+            price = float(form['price'])
+        ) #need to push an anon phone # here.
+        discussion.anonymous_phone_number = discussion.buy_number().phone_number
+        db.session.add(discussion)
+        db.session.commit()
+        return 'success'
+
+    return "error"
+
+### 
+
+@app.route('/editdiscussions/<discussion_id>', methods=["GET", "POST"])
+@cross_origin(headers=["Content-Type", "Authorization"])
+@cross_origin(headers=["Access-Control-Allow-Origin", "*"])
+def edit_discussion():
+    try:
+        user_id = get_user_id(request.headers.get("Authorization", None))
+    except AttributeError:
+        user_id = "nope"
+    
+    discussion_id = request.query_string[3:]
+
+    if request.method == 'POST':
+        #I think below works.  maybe some way to integrate it into current method?  Or maybe not, since it needs to keep current discussion id
+        
+        '''host = User.query.filter(User.user_id == form['user_id']).one()
+        # host = session.query(User).filter_by(user_id=form['user_id']).one()
+        # anonymous_phone_number = DiscussionProfile.buy_number() #missing required self.
+        discussion = DiscussionProfile(
+            description = form['description'], 
+            image_url = form['image_url'], 
+            host = host,
+            otherProfile = form['otherProfile'],
+            price = float(form['price'])
+        ) #need to push an anon phone # here.
+        discussion.anonymous_phone_number = discussion.buy_number().phone_number
+        db.session.add(discussion)
+        db.session.commit()
+        return 'success' '''
+
+    if request.method == 'GET':
+        form=request.get_json()
+        #return all the info for that discussion id, if user is correct
+
+
+    return "error"
+
+
 @app.route('/conversations', methods=["GET", "POST"])
 @app.route('/conversations/', methods=["POST"])
 @app.route('/conversations/<discussion_id>', methods=["GET", "POST"])
@@ -345,30 +407,6 @@ def gettimeslots():
     return times
 
     # return 'error'
-
-
-@app.route('/api/discussions/new', methods=["GET", "POST"])
-# @cross_origin(headers=["Content-Type", "Authorization"])
-@cross_origin(headers=["Access-Control-Allow-Origin", "*"])
-def new_discussion():
-    form=request.get_json()
-    if request.method == 'POST':
-        host = User.query.filter(User.user_id == form['user_id']).one()
-        # host = session.query(User).filter_by(user_id=form['user_id']).one()
-        # anonymous_phone_number = DiscussionProfile.buy_number() #missing required self.
-        discussion = DiscussionProfile(
-            description = form['description'], 
-            image_url = form['image_url'], 
-            host = host,
-            otherProfile = form['otherProfile'],
-            price = float(form['price'])
-        ) #need to push an anon phone # here.
-        discussion.anonymous_phone_number = discussion.buy_number().phone_number
-        db.session.add(discussion)
-        db.session.commit()
-        return 'success'
-
-    return "error"
 
 @app.route('/discussions/test_new', methods=["GET", "POST"])
 def test_new_discussion():
