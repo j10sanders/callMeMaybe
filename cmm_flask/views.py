@@ -311,7 +311,8 @@ def new_discussion():
 
 ### 
 
-@app.route('/editdiscussions/<discussion_id>', methods=["GET", "POST"])
+@app.route('/editdiscussion', methods=["GET"])
+@app.route('/editdiscussion/<discussion_id>', methods=["GET", "POST"])
 @cross_origin(headers=["Content-Type", "Authorization"])
 @cross_origin(headers=["Access-Control-Allow-Origin", "*"])
 def edit_discussion():
@@ -343,7 +344,11 @@ def edit_discussion():
     if request.method == 'GET':
         form=request.get_json()
         #return all the info for that discussion id, if user is correct
-
+        dp = DiscussionProfile.query.get(int(discussion_id))
+        if dp.host.user_id == user_id:
+            return jsonify({'description': dp.description, 'image_url': dp.image_url, 'price': dp.price, 'otherProfile': dp.otherProfile})
+        else:
+            return "Not this user's"
 
     return "error"
 
