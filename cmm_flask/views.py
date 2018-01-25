@@ -311,44 +311,35 @@ def new_discussion():
 
 ### 
 
-@app.route('/editdiscussion', methods=["GET"])
+@app.route('/editdiscussion', methods=["GET", "POST"])
 @app.route('/editdiscussion/<discussion_id>', methods=["GET", "POST"])
 @cross_origin(headers=["Content-Type", "Authorization"])
 @cross_origin(headers=["Access-Control-Allow-Origin", "*"])
 def edit_discussion():
-    try:
-        user_id = get_user_id(request.headers.get("Authorization", None))
-    except AttributeError:
-        user_id = "nope"
-    
     discussion_id = request.query_string[3:]
-
+    dp = DiscussionProfile.query.get(int(discussion_id))
     if request.method == 'POST':
-        #I think below works.  maybe some way to integrate it into current method?  Or maybe not, since it needs to keep current discussion id
-        
-        '''host = User.query.filter(User.user_id == form['user_id']).one()
-        # host = session.query(User).filter_by(user_id=form['user_id']).one()
-        # anonymous_phone_number = DiscussionProfile.buy_number() #missing required self.
-        discussion = DiscussionProfile(
-            description = form['description'], 
-            image_url = form['image_url'], 
-            host = host,
-            otherProfile = form['otherProfile'],
-            price = float(form['price'])
-        ) #need to push an anon phone # here.
-        discussion.anonymous_phone_number = discussion.buy_number().phone_number
-        db.session.add(discussion)
-        db.session.commit()
-        return 'success' '''
+        pdb.set_trace()
+        form=request.get_json()
+        if dp.host.user_id == form['user_id']:
+            dp.description = form['description'], 
+            dp.image_url = form['image_url'], 
+            dp.otherProfile = form['otherProfile'],
+            dp.price = float(form['price'])
+            db.session.commit()
+            return 'success'
+        else: 
+            return "wrong user"
 
     if request.method == 'GET':
-        form=request.get_json()
-        #return all the info for that discussion id, if user is correct
-        dp = DiscussionProfile.query.get(int(discussion_id))
-        if dp.host.user_id == user_id:
-            return jsonify({'description': dp.description, 'image_url': dp.image_url, 'price': dp.price, 'otherProfile': dp.otherProfile})
-        else:
+        try:
+            user_id = get_user_id(request.headers.get("Authorization", None))
+        except AttributeError:
+            user_id = "nope"
+        if dp.host.user_id != user_id:
             return "Not this user's"
+            
+        return jsonify({'description': dp.description, 'image_url': dp.image_url, 'price': dp.price, 'otherProfile': dp.otherProfile})
 
     return "error"
 
