@@ -280,11 +280,28 @@ def discussion_profile():
             is_users = True
         profile=json.dumps({'host': dp.host.user_id, 'image': dp.image_url, 'description': dp.description,
             'anonymous_phone_number': dp.anonymous_phone_number, 'auth_pic': dp.host.auth_pic, 'first_name':dp.host.first_name, 
-            'last_name':dp.host.last_name, 'is_users': is_users
+            'last_name':dp.host.last_name, 'is_users': is_users, 'price': dp.price, 'otherProfile': dp.otherProfile,
         })
         return profile
     return "error"
 
+
+@app.route('/deleteDiscussion', methods=["GET"])
+@app.route('/deleteDiscussion/<discussion_id>', methods=["GET"])
+@cross_origin(headers=["Content-Type", "Authorization"])
+def deleted_discussion(): 
+    try:
+        user_id = get_user_id(request.headers.get("Authorization", None))
+    except AttributeError:
+        user_id = "nope"
+    discussion_id = request.query_string[3:] # ex) 'id=423'
+    if discussion_id is not None:
+        dp = DiscussionProfile.query.get(int(discussion_id))
+        if dp.host.user_id == user_id:
+            db.session.delete(dp)
+            db.session.commit()
+            return "deleted"
+    return "error"
 
 @app.route('/api/discussions/new', methods=["GET", "POST"])
 # @cross_origin(headers=["Content-Type", "Authorization"])
@@ -309,7 +326,6 @@ def new_discussion():
 
     return "error"
 
-### 
 
 @app.route('/editdiscussion', methods=["GET", "POST"])
 @app.route('/editdiscussion/<discussion_id>', methods=["GET", "POST"])
@@ -319,7 +335,6 @@ def edit_discussion():
     discussion_id = request.query_string[3:]
     dp = DiscussionProfile.query.get(int(discussion_id))
     if request.method == 'POST':
-        pdb.set_trace()
         form=request.get_json()
         if dp.host.user_id == form['user_id']:
             dp.description = form['description'], 
@@ -338,7 +353,7 @@ def edit_discussion():
             user_id = "nope"
         if dp.host.user_id != user_id:
             return "Not this user's"
-            
+
         return jsonify({'description': dp.description, 'image_url': dp.image_url, 'price': dp.price, 'otherProfile': dp.otherProfile})
 
     return "error"
