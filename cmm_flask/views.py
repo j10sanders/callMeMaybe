@@ -153,46 +153,9 @@ def requires_auth(f):
     return decorated
 
 ###
-
-
-
-@app.route('/api/register', methods=["POST"])
-# @cross_origin(headers=["Access-Control-Allow-Origin", "*"])
-def register():
-    # form = RegisterForm()
-    form=request.get_json()
-    if User.query.filter(User.user_id == form['user_id']).count() > 0:
-        return "user previously registered."
-    if "phone_number" in form:
-        tel = form['phone_number'].replace('-', '') #"+{0}{1}".format(form.country_code.data, form.phone_number.data)
-        
-        if User.query.filter(User.phone_number == tel).count() > 0:
-            #form.email.errors.append("Phone number already in use.")
-            #return view('register', form)
-            return "Phone number already in use."
-        # db.drop_all()
-        # db.create_all()
-        user = User(
-                user_id=form['user_id'],
-                # email=form['email'],
-                # password=generate_password_hash(form['password']),
-                first_name=form['first_name'],
-                last_name=form['last_name'],
-                auth_pic=form['auth_pic'],
-                phone_number=tel,
-                area_code=tel[2:5]
-            )
-
-        db.session.add(user)
-        db.session.commit()
-        print(form, "HELLO")
-        return "done"
-
-    else: 
-        return "register phone"
-
 def get_user_id(t):
     s_t = t.split()
+    # pdb.set_trace()
     token = s_t[1]
     jsonurl = urlopen("https://"+AUTH0_DOMAIN+"/.well-known/jwks.json")
     jwks = json.loads(jsonurl.read())
@@ -225,7 +188,49 @@ def get_user_id(t):
         audience=AUTH0_AUDIENCE,
         issuer="https://"+AUTH0_DOMAIN+"/"
     )
+    # pdb.set_trace()
     return payload['sub']
+
+
+@app.route('/api/register', methods=["GET", "POST"])
+@cross_origin(headers=["Content-Type", "Authorization"])
+@cross_origin(headers=["Access-Control-Allow-Origin", "*"])
+def register():
+    # pdb.set_trace()
+    try:
+        user_id = get_user_id(request.headers.get("Authorization", None))
+    except AttributeError:
+        user_id = "nope"
+    form=request.get_json()
+    if request.method == 'POST':
+        if form['user_id']:
+            user_id = form['user_id']
+        if "phone_number" in form:
+            tel = form['phone_number'].replace('-', '') #"+{0}{1}".format(form.country_code.data, form.phone_number.data)
+        
+        if User.query.filter(User.phone_number == tel).count() > 0:
+            #form.email.errors.append("Phone number already in use.")
+            #return view('register', form)
+            return "Phone number already in use."
+        user = User(
+                user_id=form['user_id'],
+                first_name=form['first_name'],
+                last_name=form['last_name'],
+                auth_pic=form['auth_pic'],
+                phone_number=tel,
+                area_code=tel[2:5]
+            )
+
+        db.session.add(user)
+        db.session.commit()
+        print(form, "HELLO")
+        return "done"
+
+    if User.query.filter(User.user_id == user_id).count() > 0:
+        return "user previously registered."
+
+    else: 
+        return "register phone"
 
 @app.route('/api/discussions', methods=["GET"])
 @cross_origin(headers=["Content-Type", "Authorization"])
