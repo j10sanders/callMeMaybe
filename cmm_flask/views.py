@@ -395,8 +395,8 @@ def savetimeslots():
         times = form['times']
         for i in times:
             timeslot = TimeSlot(
-                start_time = i['startDate'],
-                end_time = i['endDate'],
+                start_time = i['start'],
+                end_time = i['end'],
                 host = host,
             )
             db.session.add(timeslot)
@@ -416,7 +416,7 @@ def gettimeslots():
     obj = []
     for i in host.timeslots:
         if datetime.datetime.now() < i.end_time:
-            obj.append({'start_time': i.start_time.isoformat(), 'end_time': i.end_time.isoformat()})
+            obj.append({'start': i.start_time.isoformat(), 'end': i.end_time.isoformat()})
 
     times=json.dumps(obj)
     print(times)
