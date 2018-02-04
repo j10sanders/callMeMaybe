@@ -218,7 +218,7 @@ def register():
                 last_name=form['last_name'],
                 auth_pic=form['auth_pic'],
                 phone_number=tel,
-                area_code=tel[2:5]
+                area_code=tel[2:5],
             )
 
         db.session.add(user)
@@ -322,7 +322,8 @@ def new_discussion():
             image_url = form['image_url'], 
             host = host,
             otherProfile = form['otherProfile'],
-            price = float(form['price'])
+            price = float(form['price']),
+            timezone = form['timezone'],
         ) #need to push an anon phone # here.
         discussion.anonymous_phone_number = discussion.buy_number().phone_number
         db.session.add(discussion)
@@ -345,7 +346,8 @@ def edit_discussion():
             dp.description = form['description'], 
             dp.image_url = form['image_url'], 
             dp.otherProfile = form['otherProfile'],
-            dp.price = float(form['price'])
+            dp.price = float(form['price']),
+            dp.timezone = form['timezone'],
             db.session.commit()
             return 'success'
         else: 
@@ -359,7 +361,7 @@ def edit_discussion():
         if dp.host.user_id != user_id:
             return "Not this user's"
 
-        return jsonify({'description': dp.description, 'image_url': dp.image_url, 'price': dp.price, 'otherProfile': dp.otherProfile})
+        return jsonify({'description': dp.description, 'image_url': dp.image_url, 'price': dp.price, 'otherProfile': dp.otherProfile, 'timezone': dp.timezone})
 
     return "error"
 
@@ -375,8 +377,9 @@ def new_conversation():
     if 'phone_number' in form: #this is where I'll need truffle/Meta Mask.  May also need to send a verification text.
         # guest_phone_number = generate_password_hash(form['phone_number'])
         guest_phone_number = form['phone_number'].replace('-', '')
+        time = form['start_time']
         discussion_profile = DiscussionProfile.query.get(int(discussion_id))
-        conversation = Conversation(form['message'], discussion_profile, guest_phone_number=form['phone_number'].replace('-', ''))
+        conversation = Conversation(form['message'], discussion_profile, guest_phone_number=guest_phone_number, start_time=time)
         db.session.add(conversation)
         db.session.commit()
 
@@ -393,6 +396,7 @@ def savetimeslots():
     if request.method == 'POST':
         host = User.query.filter(User.user_id == form['user_id']).one()
         times = form['times']
+        print(times, "savetimeslots times")
         for i in times:
             timeslot = TimeSlot(
                 start_time = i['start'],
@@ -416,6 +420,7 @@ def gettimeslots():
     obj = []
     for i in host.timeslots:
         if datetime.datetime.now() < i.end_time:
+            print(i.start_time, i.start_time.isoformat())
             obj.append({'start': i.start_time.isoformat(), 'end': i.end_time.isoformat()})
 
     times=json.dumps(obj)
@@ -475,16 +480,16 @@ def exchange_sms():
 @app.route('/exchange/voice', methods=["POST"])
 def exchange_voice():
     form = ExchangeForm()
-    outgoing_number = _gather_outgoing_phone_number(form.From.data, form.To.data)
-
-    # response = twilio.twiml.Response()
-    # # response.addPlay("http://howtodocs.s3.amazonaws.com/howdy-tng.mp3")
-    # response.addDial(outgoing_number)
-
     response = VoiceResponse()
-    dial = Dial(caller_id = form.To.data) # the number the person calls is the same as the reciever sees.
-    dial.number(outgoing_number)
-    response.append(dial)
+    try: 
+        outgoing_number = _gather_outgoing_phone_number(form.From.data, form.To.data)
+    except TimeError as e:
+        response.say(str(e))
+        return twiml(response)
+    if outgoing_number:
+        dial = Dial(caller_id = form.To.data) # the number the person calls is the same as the reciever sees.
+        dial.number(outgoing_number)
+        response.append(dial)
 
     return twiml(response)
 
@@ -497,7 +502,14 @@ def _gather_outgoing_phone_number(incoming_phone_number, anonymous_phone_number)
         .first()
     # if check_password_hash(conversation.guest_phone_number, incoming_phone_number):
     if conversation.guest_phone_number == incoming_phone_number:
-        return conversation.discussion_profile.host.phone_number
+        differece = (datetime.datetime.now() - conversation.start_time).total_seconds() / 60
+        if difference > 0:
+            raise TimeError("The timeslot you booked doesn't start for {} minutes".format(str(difference)))
+        else:
+            if difference < -10:
+                raise TimeError("You needed to call within 10minutes of your booked timeslot.  It has been {} minutes.".format(str(difference*-1)))
+            else:
+                return conversation.discussion_profile.host.phone_number
 
     return conversation.guest_phone_number
 
