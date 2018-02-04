@@ -396,7 +396,8 @@ def savetimeslots():
     if request.method == 'POST':
         host = User.query.filter(User.user_id == form['user_id']).one()
         times = form['times']
-        print(times, "savetimeslots times")
+        # Remove old timeslots in case the user deleted some.
+        db.session.query(TimeSlot).filter_by(host = host).delete() 
         for i in times:
             timeslot = TimeSlot(
                 start_time = i['start'],
