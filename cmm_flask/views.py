@@ -410,10 +410,30 @@ def savetimeslots():
 
 
 @cross_origin(headers=["Access-Control-Allow-Origin", "*"])
+@cross_origin(headers=["Content-Type", "Authorization"])
+@app.route('/api/getmytimeslots', methods=["GET"])
+# @app.route('/api/gettimeslots/<discussion_id>', methods=["GET", "POST"])
+def getmytimeslots():
+    try:
+        user_id = get_user_id(request.headers.get("Authorization", None))
+    except AttributeError:
+        user_id = "nope"
+    host = User.query.filter(User.user_id == user_id).one()
+    obj = []
+    for i in host.timeslots:
+        if datetime.datetime.now() < i.end_time:
+            print(i.start_time, i.start_time.isoformat())
+            obj.append({'start': i.start_time.isoformat(), 'end': i.end_time.isoformat()})
+
+    times=json.dumps(obj)
+    print(times)
+    return times
+
+
+@cross_origin(headers=["Access-Control-Allow-Origin", "*"])
 @app.route('/api/gettimeslots/', methods=["GET"])
 # @app.route('/api/gettimeslots/<discussion_id>', methods=["GET", "POST"])
 def gettimeslots():
-    form=request.get_json()
     discussion_id = request.query_string[3:]
     discussion_profile = DiscussionProfile.query.get(int(discussion_id))
     host = discussion_profile.host
