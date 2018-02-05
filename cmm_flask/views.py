@@ -365,7 +365,7 @@ def edit_discussion():
 
     return "error"
 
-
+@cross_origin(headers=["Access-Control-Allow-Origin", "*"])
 @app.route('/conversations', methods=["GET", "POST"])
 @app.route('/conversations/', methods=["POST"])
 @app.route('/conversations/<discussion_id>', methods=["GET", "POST"])
@@ -396,7 +396,7 @@ def savetimeslots():
     if request.method == 'POST':
         host = User.query.filter(User.user_id == form['user_id']).one()
         times = form['times']
-        # Remove old timeslots in case the user deleted some.
+        # Remove old timeslots in case the user deleted any.
         db.session.query(TimeSlot).filter_by(host = host).delete() 
         for i in times:
             timeslot = TimeSlot(
