@@ -504,7 +504,8 @@ def exchange_voice():
     response = VoiceResponse()
     try: 
         outgoing_number = _gather_outgoing_phone_number(form.From.data, form.To.data)
-    except TimeError as e:
+        print(outgoing_number, "outgoing_number")
+    except ValueError as e:
         response.say(str(e))
         return twiml(response)
     if outgoing_number:
@@ -516,23 +517,21 @@ def exchange_voice():
 
 
 def _gather_outgoing_phone_number(incoming_phone_number, anonymous_phone_number):
-    #for all numbers in conversation?
-    print("gathering")
-    vacay = Conversation.query \
-        .filter(Conversation.discussion_profile.anonymous_phone_number == anonymous_phone_number) \
+    conversation = Conversation.query \
+        .filter(DiscussionProfile.anonymous_phone_number == anonymous_phone_number) \
         .first()
-    # if check_password_hash(conversation.guest_phone_number, incoming_phone_number):
+    print(conversation.guest_phone_number, incoming_phone_number)
     if conversation.guest_phone_number == incoming_phone_number:
-        differece = (datetime.datetime.now() - conversation.start_time).total_seconds() / 60
-        if difference > 0:
-            raise TimeError("The timeslot you booked doesn't start for {} minutes".format(str(difference)))
-        else:
-            if difference < -10:
-                raise TimeError("You needed to call within 10minutes of your booked timeslot.  It has been {} minutes.".format(str(difference*-1)))
-            else:
-                return conversation.discussion_profile.host.phone_number
+        return conversation.discussion_profile.host.phone_number
 
-    return conversation.guest_phone_number
+    difference = (datetime.datetime.now() - conversation.start_time).total_seconds() / 60
+    if difference > 0:
+        raise ValueError("The timeslot you booked doesn't start for {} minutes".format(str(round(difference,1))))
+    else:
+        if difference < -10:
+            raise ValueError("You needed to call within 10minutes of your booked timeslot.  It has been {} minutes since your booking.".format(str(difference*-1)))
+        else:
+            return conversation.guest_phone_number
 
 
 def _respond_message(message):
