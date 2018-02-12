@@ -27,6 +27,10 @@ from werkzeug.security import check_password_hash, generate_password_hash
 from werkzeug.exceptions import Forbidden
 import pdb
 import datetime
+from flask_admin import Admin
+from flask_admin.contrib.sqla import ModelView
+from cmm_flask.models.conversation import Conversation
+from cmm_flask.models.timeslot import TimeSlot
 
 ENV_FILE = find_dotenv()
 if ENV_FILE:
@@ -35,6 +39,12 @@ AUTH0_DOMAIN = env.get("AUTH0_DOMAIN")
 AUTH0_AUDIENCE = 'https://jonsanders.auth0.com/api/v2/'
 ALGORITHMS = ["RS256"]
 
+
+admin=Admin(app, name="Dashboard")
+admin.add_view(ModelView(User, db.session))
+admin.add_view(ModelView(DiscussionProfile, db.session))
+admin.add_view(ModelView(Conversation, db.session))
+admin.add_view(ModelView(TimeSlot, db.session))
 
 ###
 class AuthError(Exception):
@@ -231,6 +241,14 @@ def register():
 
     else: 
         return "register phone"
+
+@app.route('/expertrequest', methods=["GET, POST"])
+@cross_origin(headers=["Content-Type", "Authorization"])
+@cross_origin(headers=["Access-Control-Allow-Origin", "*"])
+def expert_request():
+    form = request.get_json()
+    return 
+
 
 @app.route('/api/discussions', methods=["GET"])
 @cross_origin(headers=["Content-Type", "Authorization"])
@@ -541,3 +559,14 @@ def _respond_message(message):
     # response = twilio.twiml.Response()
     # response.message(message)
     return response
+
+
+
+
+# Admin.add_view(ModelView(User, db.session))
+
+# Admin.add_view(ModelView(DiscussionProfile, db.session))
+
+# Admin.add_view(ModelView(Conversation, db.session))
+
+# Admin.add_view(ModelView(TimeSlot, db.session))

@@ -7,6 +7,7 @@ manager = Manager(app)
 manager.add_command('db', MigrateCommand)
 
 
+
 @manager.command
 def test():
     """Run the unit tests."""
