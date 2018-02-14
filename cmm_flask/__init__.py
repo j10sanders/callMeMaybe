@@ -9,7 +9,7 @@ db = SQLAlchemy()
 bcrypt = Bcrypt()
 
 def create_app(config_name='development', p_db=db, p_bcrypt=bcrypt):
-    new_app = Flask(__name__, static_folder="./static/dist", template_folder="./static")
+    new_app = Flask(__name__, static_folder="./static/dist")
     CORS(new_app)
     new_app.debug = True
     config_app(config_name, new_app)
@@ -29,4 +29,6 @@ def config_app(config_name, new_app):
 
 app = create_app()
 
+
 import cmm_flask.views
+from . import admin_login

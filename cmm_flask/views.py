@@ -1,5 +1,5 @@
 from cmm_flask import db, bcrypt, app
-from flask import session, g, request, flash, render_template, make_response, jsonify, _app_ctx_stack
+from flask import session, g, request, flash, render_template, make_response, jsonify, _app_ctx_stack, redirect, url_for
 import twilio.twiml
 from flask_wtf import RecaptchaField
 from twilio.twiml.messaging_response import Message, MessagingResponse
@@ -16,21 +16,21 @@ from six.moves.urllib.request import urlopen
 from flask_cors import cross_origin
 from jose import jwt
 from dotenv import load_dotenv, find_dotenv
-
 init_models_module(db, bcrypt, app)
-
 from cmm_flask.models.user import User
 from cmm_flask.models.discussion_profile import DiscussionProfile
 from cmm_flask.models.conversation import Conversation
 from cmm_flask.models.timeslot import TimeSlot
+from cmm_flask.models.admins import AdminUser
 from werkzeug.security import check_password_hash, generate_password_hash
 from werkzeug.exceptions import Forbidden
 import pdb
 import datetime
 from flask_admin import Admin
 from flask_admin.contrib.sqla import ModelView
-from cmm_flask.models.conversation import Conversation
-from cmm_flask.models.timeslot import TimeSlot
+from flask.ext.login import login_user, logout_user, login_required
+from flask.ext.login import current_user
+from sqlalchemy.exc import IntegrityError
 
 ENV_FILE = find_dotenv()
 if ENV_FILE:
@@ -38,7 +38,6 @@ if ENV_FILE:
 AUTH0_DOMAIN = env.get("AUTH0_DOMAIN")
 AUTH0_AUDIENCE = 'https://jonsanders.auth0.com/api/v2/'
 ALGORITHMS = ["RS256"]
-
 
 admin=Admin(app, name="Dashboard")
 admin.add_view(ModelView(User, db.session))
@@ -561,6 +560,40 @@ def _respond_message(message):
     return response
 
 
+@app.route("/login", methods=["GET"])
+def login_get():
+    return render_template("login.html")
+
+@app.route("/login", methods=["POST"])
+def login_post():
+    name = request.form["name"]
+    password = request.form["password"]
+    user = AdminUser.query.filter(AdminUser.name == name).one()
+    # host = User.query.filter(User.user_id == form['user_id']).one()
+    if not user or not check_password_hash(user.password, password):
+        return redirect(url_for("login_get"))
+    login_user(user, remember=True)
+    return redirect(request.args.get('next') or url_for("admin.index"))
+
+
+@app.route("/register", methods=["GET"])
+def register_get():
+    return render_template('register.html')
+
+@app.route("/register", methods=["POST"])
+def register_post():
+    try: 
+        pdb.set_trace()
+        if request.form["name"] not in ["jon", "alex"]:
+            return "You aren't an admin.  Get out of here."
+        name = AdminUser(name=request.form["name"], password=generate_password_hash(request.form["password"]))
+        db.session.add(name)
+        db.session.commit()
+        login_user(name)
+        return redirect(request.args.get("next") or url_for("entries"))
+    except IntegrityError:
+        session.rollback()
+        return redirect(url_for("register_get"))
 
 
 # Admin.add_view(ModelView(User, db.session))

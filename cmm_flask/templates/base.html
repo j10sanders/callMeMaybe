@@ -1,0 +1,128 @@
+<!DOCTYPE html>
+<html lang="en">
+    <head>
+        <meta charset="utf-8" />
+        <meta http-equiv="X-UA-Compatible" content="IE=edge">
+        <meta name="viewport" content="width=device-width, initial-scale=1" />
+
+        <title>Crossword</title>
+
+        <!-- CSS -->
+        <!-- Bootstrap -->
+        <link rel="stylesheet" href="//netdna.bootstrapcdn.com/bootstrap/3.1.1/css/bootstrap.min.css">
+        <!-- Blog -->
+        <link rel="shortcut icon" href="http://www.iconj.com/ico/v/j/vjw01je1oi.ico" type="image/x-icon" />
+        <link rel="apple-touch-icon" href="http://www.iconj.com/ico/v/j/vjw01je1oi.ico">
+        <link href='https://fonts.googleapis.com/css?family=Arvo' rel='stylesheet' type='text/css'>
+
+
+        <!-- Combodate -->
+        <script src="js/combodate.js"></script> 
+        <!-- jQuery -->
+        <script src="http://code.jquery.com/jquery-2.1.1.min.js"></script>
+        <!-- Bootstrap -->
+        <script src="//netdna.bootstrapcdn.com/bootstrap/3.1.1/js/bootstrap.min.js"></script>
+        
+        <style>
+        
+    .navbar {
+      margin-bottom: 0;
+      background-color: #3185EA;
+      z-index: 9999;
+      border: 0;
+      font-size: 12px !important;
+      line-height: 1.42857143 !important;
+      letter-spacing: 1px;
+      border-radius: 1px;
+      font-family: Arial, sans-serif;
+  }
+  .navbar li a, .navbar .navbar-brand {
+      color: #fff !important;
+  }
+  .navbar-nav li a:hover, .navbar-nav li.active a {
+      color: #A7D8FF !important;
+      background-color: #000 !important;
+  }
+  .navbar-default .navbar-toggle {
+      border-color: transparent;
+      color: #fff !important;
+  }
+  
+  
+body {
+  font-family: Georgia;
+}
+label {
+  font-family: Arial, sans-serif;
+}
+p {
+    font-size: 1.3em;
+}
+h1{
+  font-family: 'Arvo', serif;
+  text-align: left;
+}
+h2{
+  font-family: 'Arvo', serif;
+  font-size: 1.2em;
+}
+a {
+  color: #000000 ;
+}
+footer { padding: 0em 0;
+width: 90%;
+height: 2em;
+background: #A7D8FF;
+position: fixed;
+bottom: .1em;
+margin-left: .1em;
+font-size: .8em;
+}
+.content-footer{
+  color: #3D3D3D;
+}
+table{
+    margin-bottom:60px;
+}
+body { padding-top: 3em; }
+    </style>
+    </head>
+    <body>
+    <nav class="navbar navbar-default navbar-fixed-top">
+      <div class="container">
+        <div class="navbar-header">
+          <button type="button" class="navbar-toggle" data-toggle="collapse" data-target="#myNavbar">
+            <span class="icon-bar"></span>
+            <span class="icon-bar"></span>
+            <span class="icon-bar"></span> 
+          </button>
+        </div>
+        <div class="collapse navbar-collapse" id="myNavbar">
+          <ul class="nav navbar-nav navbar-right">
+            <!--<li><a href="{{ url_for('register_get') }}">REGISTER</a> <span class="sr-only">(current)</span></a></li>-->
+            <li><a href="{{ url_for('login_get') }}">LOGIN</a> <span class="sr-only">(current)</span></a></li>
+            <!--<li><a href="#services">GROUPS</a></li>-->
+          </ul>
+        </div>
+      </div>
+    
+    </nav>
+        {% with messages = get_flashed_messages(with_categories=true) %}
+        {% if messages %}
+        {% for category, message in messages %}
+        <div class="alert alert-{{ category }}">
+            {{ message }}
+        </div>
+        {% endfor %}
+        {% endif %}
+        {% endwith %}
+        
+        <div class="container">
+            {% block content %}{% endblock %}
+        </div>
+    <!--<footer class="content-footer">
+        <p> Check this out on <a href="https://github.com/j10sanders/crossword">Github</a></p>
+    </footer>-->
+    </body>
+    
+</html>
