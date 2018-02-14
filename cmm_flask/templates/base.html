@@ -5,24 +5,18 @@
         <meta http-equiv="X-UA-Compatible" content="IE=edge">
         <meta name="viewport" content="width=device-width, initial-scale=1" />
 
-        <title>Crossword</title>
+        <title>Dashboard</title>
 
         <!-- CSS -->
         <!-- Bootstrap -->
         <link rel="stylesheet" href="//netdna.bootstrapcdn.com/bootstrap/3.1.1/css/bootstrap.min.css">
-        <!-- Blog -->
         <link rel="shortcut icon" href="http://www.iconj.com/ico/v/j/vjw01je1oi.ico" type="image/x-icon" />
         <link rel="apple-touch-icon" href="http://www.iconj.com/ico/v/j/vjw01je1oi.ico">
         <link href='https://fonts.googleapis.com/css?family=Arvo' rel='stylesheet' type='text/css'>
-
-
-        <!-- Combodate -->
-        <script src="js/combodate.js"></script> 
         <!-- jQuery -->
         <script src="http://code.jquery.com/jquery-2.1.1.min.js"></script>
         <!-- Bootstrap -->
         <script src="//netdna.bootstrapcdn.com/bootstrap/3.1.1/js/bootstrap.min.js"></script>
-        
         <style>
         
     .navbar {
@@ -99,30 +93,15 @@ body { padding-top: 3em; }
         </div>
         <div class="collapse navbar-collapse" id="myNavbar">
           <ul class="nav navbar-nav navbar-right">
-            <!--<li><a href="{{ url_for('register_get') }}">REGISTER</a> <span class="sr-only">(current)</span></a></li>-->
             <li><a href="{{ url_for('login_get') }}">LOGIN</a> <span class="sr-only">(current)</span></a></li>
-            <!--<li><a href="#services">GROUPS</a></li>-->
+            <li><a href="{{ url_for('logout') }}">LOGOUT</a> <span class="sr-only">(current)</span></a></li>
           </ul>
         </div>
       </div>
-    
     </nav>
-        {% with messages = get_flashed_messages(with_categories=true) %}
-        {% if messages %}
-        {% for category, message in messages %}
-        <div class="alert alert-{{ category }}">
-            {{ message }}
-        </div>
-        {% endfor %}
-        {% endif %}
-        {% endwith %}
-        
         <div class="container">
             {% block content %}{% endblock %}
         </div>
-    <!--<footer class="content-footer">
-        <p> Check this out on <a href="https://github.com/j10sanders/crossword">Github</a></p>
-    </footer>-->
     </body>
     
 </html>

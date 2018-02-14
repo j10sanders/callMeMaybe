@@ -26,11 +26,12 @@ from werkzeug.security import check_password_hash, generate_password_hash
 from werkzeug.exceptions import Forbidden
 import pdb
 import datetime
-from flask_admin import Admin
+from flask_admin import Admin, expose
 from flask_admin.contrib.sqla import ModelView
 from flask.ext.login import login_user, logout_user, login_required
 from flask.ext.login import current_user
 from sqlalchemy.exc import IntegrityError
+from flask_admin.contrib import sqla
 
 ENV_FILE = find_dotenv()
 if ENV_FILE:
@@ -39,11 +40,63 @@ AUTH0_DOMAIN = env.get("AUTH0_DOMAIN")
 AUTH0_AUDIENCE = 'https://jonsanders.auth0.com/api/v2/'
 ALGORITHMS = ["RS256"]
 
+class MyView(sqla.ModelView):
+
+    def is_accessible(self):
+        return current_user.is_authenticated
+
+    def inaccessible_callback(self, name, **kwargs):
+        # redirect to login page if user doesn't have access
+        return redirect(url_for('login_get', next=request.url))
+        redirect(request.args.get('next') or url_for("admin.index"))
+
+
+@app.route("/login", methods=["GET"])
+def login_get():
+    return render_template("login.html")
+
+@app.route("/login", methods=["POST"])
+def login_post():
+    name = request.form["name"]
+    password = request.form["password"]
+    user = AdminUser.query.filter(AdminUser.name == name).one()
+    # host = User.query.filter(User.user_id == form['user_id']).one()
+    if not user or not check_password_hash(user.password, password):
+        return redirect(url_for("login_get"))
+    login_user(user, remember=True)
+    return redirect(request.args.get('next') or url_for("admin.index"))
+
+@app.route("/register", methods=["GET"])
+def register_get():
+    return render_template('register.html')
+
+@app.route("/register", methods=["POST"])
+def register_post():
+    try: 
+        if request.form["name"] not in ["jon", "alex"]:
+            return "You aren't an admin.  Get out of here."
+        name = AdminUser(name=request.form["name"], password=generate_password_hash(request.form["password"]))
+        db.session.add(name)
+        db.session.commit()
+        login_user(name)
+        return redirect(request.args.get("next") or url_for("entries"))
+    except IntegrityError:
+        session.rollback()
+        return redirect(url_for("register_get"))
+
+@app.route("/log_out", methods=["GET", "POST"])
+def logout():
+    print("LOGOUT")
+    logout_user()
+    return redirect(url_for("login_get"))
+
+
 admin=Admin(app, name="Dashboard")
-admin.add_view(ModelView(User, db.session))
-admin.add_view(ModelView(DiscussionProfile, db.session))
-admin.add_view(ModelView(Conversation, db.session))
-admin.add_view(ModelView(TimeSlot, db.session))
+admin.add_view(MyView(User, db.session))
+admin.add_view(MyView(DiscussionProfile, db.session))
+admin.add_view(MyView(Conversation, db.session))
+admin.add_view(MyView(TimeSlot, db.session))
+
 
 ###
 class AuthError(Exception):
@@ -559,41 +612,6 @@ def _respond_message(message):
     # response.message(message)
     return response
 
-
-@app.route("/login", methods=["GET"])
-def login_get():
-    return render_template("login.html")
-
-@app.route("/login", methods=["POST"])
-def login_post():
-    name = request.form["name"]
-    password = request.form["password"]
-    user = AdminUser.query.filter(AdminUser.name == name).one()
-    # host = User.query.filter(User.user_id == form['user_id']).one()
-    if not user or not check_password_hash(user.password, password):
-        return redirect(url_for("login_get"))
-    login_user(user, remember=True)
-    return redirect(request.args.get('next') or url_for("admin.index"))
-
-
-@app.route("/register", methods=["GET"])
-def register_get():
-    return render_template('register.html')
-
-@app.route("/register", methods=["POST"])
-def register_post():
-    try: 
-        pdb.set_trace()
-        if request.form["name"] not in ["jon", "alex"]:
-            return "You aren't an admin.  Get out of here."
-        name = AdminUser(name=request.form["name"], password=generate_password_hash(request.form["password"]))
-        db.session.add(name)
-        db.session.commit()
-        login_user(name)
-        return redirect(request.args.get("next") or url_for("entries"))
-    except IntegrityError:
-        session.rollback()
-        return redirect(url_for("register_get"))
 
 
 # Admin.add_view(ModelView(User, db.session))
