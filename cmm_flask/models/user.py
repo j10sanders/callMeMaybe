@@ -1,4 +1,5 @@
 from cmm_flask.models import app_db, app
+# from sqlalchemy import false
 # from cmm_flask.models import bcrypt
 import datetime
 import jwt
@@ -16,18 +17,18 @@ class User(db.Model):
     registered_on = db.Column(db.DateTime, nullable=True)
     phone_number = db.Column(db.String, nullable=True)
     area_code = db.Column(db.String, nullable=False)
-    admin = db.Column(db.Boolean, nullable=False, default=False)
+    expert = db.Column(db.Boolean, nullable=True, default=False)
     auth_pic = db.Column(db.String, nullable=True)
     #conversations = db.relationship("Conversation", back_populates="guest")
     discussion_profiles = db.relationship("DiscussionProfile", back_populates="host")
     timeslots=db.relationship("TimeSlot", back_populates="host")
 
-    def __init__(self, user_id, area_code, phone_number, first_name, last_name, auth_pic, admin=False):
+    def __init__(self, user_id, area_code, phone_number, first_name, last_name, auth_pic, expert=False):
         self.first_name = first_name
         self.last_name = last_name
         self.user_id = user_id
         self.registered_on = datetime.datetime.now()
-        self.admin = admin
+        self.expert = expert
         self.phone_number = phone_number
         self.area_code = area_code
         self.auth_pic = auth_pic

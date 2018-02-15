@@ -91,7 +91,7 @@ def logout():
     return redirect(url_for("login_get"))
 
 
-admin=Admin(app, name="Dashboard")
+admin=Admin(app, name="Dimpull Dashboard")
 admin.add_view(MyView(User, db.session))
 admin.add_view(MyView(DiscussionProfile, db.session))
 admin.add_view(MyView(Conversation, db.session))
@@ -436,10 +436,16 @@ def edit_discussion():
     return "error"
 
 @cross_origin(headers=["Access-Control-Allow-Origin", "*"])
+@cross_origin(headers=["Content-Type", "Authorization"])
 @app.route('/conversations', methods=["GET", "POST"])
 @app.route('/conversations/', methods=["POST"])
 @app.route('/conversations/<discussion_id>', methods=["GET", "POST"])
 def new_conversation():
+    try:
+        user_id = get_user_id(request.headers.get("Authorization", None))
+        guest = User.query.filter(User.user_id == user_id).one()
+    except AttributeError:
+        user_id = "nope"
     discussion_id = request.query_string[3:] # ex) 'id=423'
     discussion_profile = None
     # form.discussion_id.data = discussion_id
@@ -449,6 +455,7 @@ def new_conversation():
         guest_phone_number = form['phone_number'].replace('-', '')
         time = form['start_time']
         discussion_profile = DiscussionProfile.query.get(int(discussion_id))
+        # if guest:
         conversation = Conversation(form['message'], discussion_profile, guest_phone_number=guest_phone_number, start_time=time)
         db.session.add(conversation)
         db.session.commit()
@@ -590,7 +597,6 @@ def _gather_outgoing_phone_number(incoming_phone_number, anonymous_phone_number)
     conversation = Conversation.query \
         .filter(DiscussionProfile.anonymous_phone_number == anonymous_phone_number) \
         .first()
-    print(conversation.guest_phone_number, incoming_phone_number)
     if conversation.guest_phone_number == incoming_phone_number:
         return conversation.discussion_profile.host.phone_number
 
