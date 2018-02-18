@@ -5,23 +5,25 @@ import datetime, pytz
 from sqlalchemy.sql import func
 import pdb
 
-DB = app_db()
+db = app_db()
 
 
-class Conversation(DB.Model):
+class Conversation(db.Model):
     __tablename__ = "conversations"
 
-    id = DB.Column(DB.Integer, primary_key=True)
-    message = DB.Column(DB.String, nullable=False)
-    status = DB.Column(DB.Enum('pending', 'confirmed', 'rejected', name='conversation_status_enum'),
+    id = db.Column(db.Integer, primary_key=True)
+    message = db.Column(db.String, nullable=False)
+    status = db.Column(db.Enum('pending', 'confirmed', 'rejected', name='conversation_status_enum'),
                        default='pending')
     
-    guest_id = DB.Column(DB.Integer, DB.ForeignKey('users.id'))
-    discussion_profile_id = DB.Column(DB.Integer, DB.ForeignKey('discussion_profiles.id', ondelete='CASCADE'))
-    guest = DB.relationship("User", back_populates="conversations")
-    guest_phone_number = DB.Column(DB.String)
-    discussion_profile = DB.relationship("DiscussionProfile", back_populates="conversations")
-    start_time = DB.Column(DB.DateTime, server_default=func.now(), nullable=False )
+    guest_id = db.Column(db.Integer, db.ForeignKey('users.id'))
+    discussion_profile_id = db.Column(db.Integer, db.ForeignKey('discussion_profiles.id', ondelete='CASCADE'))
+    guest = db.relationship("User", back_populates="conversations")
+    guest_phone_number = db.Column(db.String)
+    discussion_profile = db.relationship("DiscussionProfile", back_populates="conversations")
+    start_time = db.Column(db.DateTime, server_default=func.now(), nullable=False )
+    reviewed = db.Column(db.Boolean, nullable=True, default=False)
+    unsubscribed = db.Column(db.Boolean, nullable=True, default=False)
 
     def __init__(self, message='', discussion_profile='', guest_phone_number='', start_time=datetime.datetime.now(), guest=''):
         self.message = message
@@ -39,6 +41,16 @@ class Conversation(DB.Model):
 
     def __repr__(self):
         return '<Conversation {0}>'.format(self.id)
+
+    def send_email(self):
+        if self.unsubscribed or self.reviewed or not guest:
+            return
+        elif datetime.datetime.now() - datetime.timedelta(minutes=15) < self.start_time:
+            return
+        else:
+            return {'guest first_name': self.guest.first_name, 'guest last_name': self.guest.last_name,
+            'host first_name': self.discussion_profile.host.first_name, 'host last_name': self.discussion_profile.host.last_name, 
+            'discussion_profile_id': self.discussion_profile_id}
 
     def notify_host(self):
         fmt = '%Y-%m-%d %I:%M %p %Z'

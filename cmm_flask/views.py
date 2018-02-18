@@ -32,13 +32,35 @@ from flask.ext.login import login_user, logout_user, login_required
 from flask.ext.login import current_user
 from sqlalchemy.exc import IntegrityError
 from flask_admin.contrib import sqla
+import smtplib
+from apscheduler.schedulers.background import BackgroundScheduler
 
 ENV_FILE = find_dotenv()
 if ENV_FILE:
     load_dotenv(ENV_FILE)
+GMAIL = env.get("GMAIL")
 AUTH0_DOMAIN = env.get("AUTH0_DOMAIN")
 AUTH0_AUDIENCE = 'https://jonsanders.auth0.com/api/v2/'
 ALGORITHMS = ["RS256"]
+
+# def sendEmails():
+#     with app.app_context():
+#         conversations = Conversation.query.all()
+#         for convo in conversations:
+#             print(convo.start_time)
+#         # adminUrl = 'http://localhost:5000/admin/user/edit/?id={}&url=%2Fadmin%2Fuser%2F'.format(host.id)
+#         # content = 'Subject: New Expert Request!\n{} with message {}'.format(adminUrl, form['message'])
+#         # smtp_server = smtplib.SMTP('smtp.gmail.com', 587)
+#         # smtp_server.ehlo()
+#         # smtp_server.starttls()
+#         # smtp_server.login('pwreset.winthemini@gmail.com', GMAIL)
+#         # smtp_server.sendmail('pwreset.winthemini@gmail.com', 'jonsandersss@gmail.com', content)
+#         # smtp_server.quit()
+
+# scheduler = BackgroundScheduler()
+# scheduler.add_job(sendEmails, 'interval', seconds=3)
+# scheduler.start()
+
 
 class MyView(sqla.ModelView):
 
@@ -308,9 +330,10 @@ def discussions():
     discussion_profiles = DiscussionProfile.query.all()
     obj = []
     for ds in discussion_profiles:
-        obj.append({'id':ds.id, 'first_name':ds.host.first_name, 'last_name':ds.host.last_name, 
-            'auth_pic': ds.host.auth_pic, 'image':ds.image_url, 'description': ds.description,
-            })
+        if ds.host.expert:
+            obj.append({'id':ds.id, 'first_name':ds.host.first_name, 'last_name':ds.host.last_name, 
+                'auth_pic': ds.host.auth_pic, 'image':ds.image_url, 'description': ds.description,
+                })
     objs=json.dumps(obj)
     return objs
 
@@ -394,6 +417,19 @@ def new_discussion():
             timezone = form['timezone'],
         ) #need to push an anon phone # here.
         discussion.anonymous_phone_number = discussion.buy_number().phone_number
+        if 'email' in form:
+            pdb.set_trace()
+            host.requestExpert = True
+            host.messageforAdmins = form['message']
+            adminUrl = 'http://localhost:5000/admin/user/edit/?id={}&url=%2Fadmin%2Fuser%2F'.format(host.id)
+            content = 'Subject: New Expert Request!\n{} with message {}'.format(adminUrl, form['message'])
+            smtp_server = smtplib.SMTP('smtp.gmail.com', 587)
+            smtp_server.ehlo()
+            smtp_server.starttls()
+            smtp_server.login('pwreset.winthemini@gmail.com', GMAIL)
+            smtp_server.sendmail('pwreset.winthemini@gmail.com', 'jonsandersss@gmail.com', content)
+            smtp_server.quit()
+
         db.session.add(discussion)
         db.session.commit()
         return 'success'
@@ -555,7 +591,7 @@ def getprofile():
         return "not authenticated"
     user = User.query.filter(User.user_id == user_id).one()
     if user:
-        return json.dumps({'user_id': user.user_id, 'phone_number': user.phone_number})
+        return json.dumps({'user_id': user.user_id, 'phone_number': user.phone_number, 'expert': user.expert})
     return
 
 
