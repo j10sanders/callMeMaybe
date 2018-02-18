@@ -250,7 +250,6 @@ def get_user_id(t):
         audience=AUTH0_AUDIENCE,
         issuer="https://"+AUTH0_DOMAIN+"/"
     )
-    # pdb.set_trace()
     return payload['sub']
 
 
@@ -258,7 +257,6 @@ def get_user_id(t):
 @cross_origin(headers=["Content-Type", "Authorization"])
 @cross_origin(headers=["Access-Control-Allow-Origin", "*"])
 def register():
-    # pdb.set_trace()
     try:
         user_id = get_user_id(request.headers.get("Authorization", None))
     except AttributeError:
@@ -445,25 +443,28 @@ def new_conversation():
         user_id = get_user_id(request.headers.get("Authorization", None))
         guest = User.query.filter(User.user_id == user_id).one()
     except AttributeError:
-        user_id = "nope"
+        guest = User.query.filter(User.user_id == 'anonymous').one()
     discussion_id = request.query_string[3:] # ex) 'id=423'
     discussion_profile = None
-    # form.discussion_id.data = discussion_id
     form=request.get_json()
-    if 'phone_number' in form: #this is where I'll need truffle/Meta Mask.  May also need to send a verification text.
-        # guest_phone_number = generate_password_hash(form['phone_number'])
+    #this is where I'll need truffle/Meta Mask.  May also need to send a verification text.
+    if 'phone_number' in form:
         guest_phone_number = form['phone_number'].replace('-', '')
-        time = form['start_time']
-        discussion_profile = DiscussionProfile.query.get(int(discussion_id))
-        # if guest:
-        conversation = Conversation(form['message'], discussion_profile, guest_phone_number=guest_phone_number, start_time=time)
-        db.session.add(conversation)
-        db.session.commit()
+    
+    if user_id:
+        if guest.phone_number != guest_phone_number:
+            guest.phone_number = guest_phone_number
 
-        conversation.notify_host()
+    time = form['start_time']
+    discussion_profile = DiscussionProfile.query.get(int(discussion_id))
+    conversation = Conversation(form['message'], discussion_profile, guest_phone_number=guest_phone_number, start_time=time, guest=guest)
+    db.session.add(conversation)
+    db.session.commit()
 
-        return 'whitelisted'
-    return "error"
+    conversation.notify_host()
+
+    return 'whitelisted'
+
 
 
 @cross_origin(headers=["Access-Control-Allow-Origin", "*"])
@@ -496,6 +497,7 @@ def getmytimeslots():
         user_id = get_user_id(request.headers.get("Authorization", None))
     except AttributeError:
         user_id = "nope"
+        return "not authenticated"
     host = User.query.filter(User.user_id == user_id).one()
     obj = []
     for i in host.timeslots:
@@ -504,7 +506,6 @@ def getmytimeslots():
             obj.append({'start': i.start_time.isoformat(), 'end': i.end_time.isoformat()})
 
     times=json.dumps(obj)
-    print(times)
     return times
 
 
@@ -541,6 +542,22 @@ def test_new_discussion():
             return redirect_to('discussions')
 
     return view('discussion_new', form)
+
+@cross_origin(headers=["Access-Control-Allow-Origin", "*"])
+@cross_origin(headers=["Content-Type", "Authorization"])
+@app.route('/getprofile', methods=["GET"])
+# @app.route('/api/gettimeslots/<discussion_id>', methods=["GET", "POST"])
+def getprofile():
+    try:
+        user_id = get_user_id(request.headers.get("Authorization", None))
+    except AttributeError:
+        user_id = "nope"
+        return "not authenticated"
+    user = User.query.filter(User.user_id == user_id).one()
+    if user:
+        return json.dumps({'user_id': user.user_id, 'phone_number': user.phone_number})
+    return
+
 
 @app.route('/conversations/confirm', methods=["POST"])
 def confirm_conversation():

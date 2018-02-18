@@ -16,19 +16,20 @@ class Conversation(DB.Model):
     status = DB.Column(DB.Enum('pending', 'confirmed', 'rejected', name='conversation_status_enum'),
                        default='pending')
     
-    #guest_id = DB.Column(DB.Integer, DB.ForeignKey('users.id'))
+    guest_id = DB.Column(DB.Integer, DB.ForeignKey('users.id'))
     discussion_profile_id = DB.Column(DB.Integer, DB.ForeignKey('discussion_profiles.id', ondelete='CASCADE'))
-    #guest = DB.relationship("User", back_populates="conversations")
+    guest = DB.relationship("User", back_populates="conversations")
     guest_phone_number = DB.Column(DB.String)
     discussion_profile = DB.relationship("DiscussionProfile", back_populates="conversations")
     start_time = DB.Column(DB.DateTime, server_default=func.now(), nullable=False )
 
-    def __init__(self, message, discussion_profile, guest_phone_number, start_time):
+    def __init__(self, message='', discussion_profile='', guest_phone_number='', start_time=datetime.datetime.now(), guest=''):
         self.message = message
         self.guest_phone_number = guest_phone_number
         self.discussion_profile = discussion_profile
         self.status = 'pending'
         self.start_time = start_time
+        self.guest = guest
 
     def confirm(self):
         self.status = 'confirmed'
@@ -44,7 +45,6 @@ class Conversation(DB.Model):
         local_tz = pytz.timezone(self.discussion_profile.timezone)
         aware = self.start_time.replace(tzinfo = pytz.UTC)
         in_local = aware.astimezone(local_tz)
-        # date_w_tz = local_tz.localize(self.start_time)
         self._send_message(self.discussion_profile.host.phone_number,
         
                            # render_template('messages/sms_host.txt',
