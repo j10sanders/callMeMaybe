@@ -18,9 +18,13 @@ class User(db.Model):
     auth_pic = db.Column(db.String, nullable=True)
     conversations = db.relationship("Conversation", back_populates="guest")
     discussion_profiles = db.relationship("DiscussionProfile", back_populates="host")
-    timeslots=db.relationship("TimeSlot", back_populates="host")
+    timeslots = db.relationship("TimeSlot", back_populates="host")
+    reviews = db.relationship("Review", back_populates="host")
+    # reviewsLeft = db.relationship("Review", back_populates="guest")
+    requestExpert = db.Column(db.Boolean, nullable=True, default=False)
+    messageforAdmins = db.Column(db.String, nullable=True, default='')
 
-    def __init__(self, user_id="anonymous", area_code="000", phone_number="", first_name="anonymous", last_name="anonymous", auth_pic="", expert=False):
+    def __init__(self, user_id="anonymous", area_code="000", phone_number="", first_name="anonymous", last_name="anonymous", auth_pic="", expert=False, requestExpert=False, messageforAdmins=''):
         self.first_name = first_name
         self.last_name = last_name
         self.user_id = user_id
@@ -29,6 +33,8 @@ class User(db.Model):
         self.phone_number = phone_number
         self.area_code = area_code
         self.auth_pic = auth_pic
+        self.requestExpert = requestExpert
+        self.messageforAdmins = messageforAdmins
 
     def is_authenticated(self):
         return True

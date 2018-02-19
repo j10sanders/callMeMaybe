@@ -21,6 +21,7 @@ from cmm_flask.models.user import User
 from cmm_flask.models.discussion_profile import DiscussionProfile
 from cmm_flask.models.conversation import Conversation
 from cmm_flask.models.timeslot import TimeSlot
+from cmm_flask.models.reviews import Review
 from cmm_flask.models.admins import AdminUser
 from werkzeug.security import check_password_hash, generate_password_hash
 from werkzeug.exceptions import Forbidden
@@ -32,10 +33,12 @@ from flask.ext.login import login_user, logout_user, login_required
 from flask.ext.login import current_user
 from sqlalchemy.exc import IntegrityError
 from flask_admin.contrib import sqla
+import smtplib
 
 ENV_FILE = find_dotenv()
 if ENV_FILE:
     load_dotenv(ENV_FILE)
+GMAIL = env.get("GMAIL")
 AUTH0_DOMAIN = env.get("AUTH0_DOMAIN")
 AUTH0_AUDIENCE = 'https://jonsanders.auth0.com/api/v2/'
 ALGORITHMS = ["RS256"]
@@ -96,6 +99,7 @@ admin.add_view(MyView(User, db.session))
 admin.add_view(MyView(DiscussionProfile, db.session))
 admin.add_view(MyView(Conversation, db.session))
 admin.add_view(MyView(TimeSlot, db.session))
+admin.add_view(MyView(Review, db.session))
 
 
 ###
@@ -308,9 +312,10 @@ def discussions():
     discussion_profiles = DiscussionProfile.query.all()
     obj = []
     for ds in discussion_profiles:
-        obj.append({'id':ds.id, 'first_name':ds.host.first_name, 'last_name':ds.host.last_name, 
-            'auth_pic': ds.host.auth_pic, 'image':ds.image_url, 'description': ds.description,
-            })
+        if ds.host.expert:
+            obj.append({'id':ds.id, 'first_name':ds.host.first_name, 'last_name':ds.host.last_name, 
+                'auth_pic': ds.host.auth_pic, 'image':ds.image_url, 'description': ds.description,
+                })
     objs=json.dumps(obj)
     return objs
 
@@ -351,12 +356,37 @@ def discussion_profile():
         is_users = False
         if dp.host.user_id == user_id:
             is_users = True
-        profile=json.dumps({'host': dp.host.user_id, 'image': dp.image_url, 'description': dp.description,
+        profile={'host': dp.host.user_id, 'image': dp.image_url, 'description': dp.description,
             'anonymous_phone_number': dp.anonymous_phone_number, 'auth_pic': dp.host.auth_pic, 'first_name':dp.host.first_name, 
             'last_name':dp.host.last_name, 'is_users': is_users, 'price': dp.price, 'otherProfile': dp.otherProfile,
-        })
+        }
+        reviews = []
+        ratings = []
+        rating = 0
+        for i in dp.host.reviews:
+            reviews.append({"stars": i.stars, "comment": i.comment, "guest_initials": i.guest_initials})
+            ratings.append(i.stars)
+            rating += i.stars
+        
+        if len(reviews) > 0:
+            if len(ratings) > 0:
+                averageRating = round(rating/len(ratings),2)
+                profile["averageRating"] = averageRating
+            profile["reviewlist"] = reviews
+        if len(need_review(dp.host, user_id)) > 0:
+            profile["needReview"] = True
+        profile = json.dumps(profile)
         return profile
     return "error"
+
+
+def need_review(host, user_id):
+    # TODO: use joins instead of "has" https://stackoverflow.com/questions/8561470/sqlalchemy-filtering-by-relationship-attribute
+    conversation = Conversation \
+        .query \
+        .filter(Conversation.status == 'confirmed', Conversation.discussion_profile.has(host = host), Conversation.guest.has(user_id = user_id), Conversation.reviewed == False) \
+        .all()
+    return conversation
 
 
 @app.route('/deleteDiscussion', methods=["GET"])
@@ -394,6 +424,18 @@ def new_discussion():
             timezone = form['timezone'],
         ) #need to push an anon phone # here.
         discussion.anonymous_phone_number = discussion.buy_number().phone_number
+        if 'email' in form:
+            host.requestExpert = True
+            host.messageforAdmins = form['message']
+            adminUrl = 'http://localhost:5000/admin/user/edit/?id={}&url=%2Fadmin%2Fuser%2F'.format(host.id)
+            content = 'Subject: New Expert Request!\n{} with message {}'.format(adminUrl, form['message'])
+            smtp_server = smtplib.SMTP('smtp.gmail.com', 587)
+            smtp_server.ehlo()
+            smtp_server.starttls()
+            smtp_server.login('pwreset.winthemini@gmail.com', GMAIL)
+            smtp_server.sendmail('pwreset.winthemini@gmail.com', 'jonsandersss@gmail.com', content)
+            smtp_server.quit()
+
         db.session.add(discussion)
         db.session.commit()
         return 'success'
@@ -444,6 +486,7 @@ def new_conversation():
         guest = User.query.filter(User.user_id == user_id).one()
     except AttributeError:
         guest = User.query.filter(User.user_id == 'anonymous').one()
+        user_id = None
     discussion_id = request.query_string[3:] # ex) 'id=423'
     discussion_profile = None
     form=request.get_json()
@@ -451,11 +494,12 @@ def new_conversation():
     if 'phone_number' in form:
         guest_phone_number = form['phone_number'].replace('-', '')
     
-    if user_id:
+    if user_id is not None:
         if guest.phone_number != guest_phone_number:
             guest.phone_number = guest_phone_number
 
     time = form['start_time']
+    print(time, "TIME")
     discussion_profile = DiscussionProfile.query.get(int(discussion_id))
     conversation = Conversation(form['message'], discussion_profile, guest_phone_number=guest_phone_number, start_time=time, guest=guest)
     db.session.add(conversation)
@@ -484,6 +528,37 @@ def savetimeslots():
             )
             db.session.add(timeslot)
             db.session.commit()
+        return 'success'
+    return 'error'
+
+
+@cross_origin(headers=["Access-Control-Allow-Origin", "*"])
+@cross_origin(headers=["Content-Type", "Authorization"])
+@app.route('/submitreview', methods=["POST"])
+def submitreview():
+    try:
+        user_id = get_user_id(request.headers.get("Authorization", None))
+        guest = User.query.filter(User.user_id == user_id).one()
+    except AttributeError:
+        guest = User.query.filter(User.user_id == 'anonymous').one()
+        user_id = None
+    form=request.get_json()
+    if request.method == 'POST':
+        stars = form['stars']
+        comment = form['comment']
+        dp = DiscussionProfile.query.get(int(form['discussion_id']))
+        review = Review(
+            stars = stars,
+            comment = comment,
+            host = dp.host,
+            guest_id = user_id,
+            guest_initials = "{}{}".format(guest.first_name[0], guest.last_name[0])
+        )
+        conversation = need_review(dp.host, user_id)
+        for i in conversation:
+            i.reviewed = True
+        db.session.add(review)
+        db.session.commit()
         return 'success'
     return 'error'
 
@@ -555,7 +630,7 @@ def getprofile():
         return "not authenticated"
     user = User.query.filter(User.user_id == user_id).one()
     if user:
-        return json.dumps({'user_id': user.user_id, 'phone_number': user.phone_number})
+        return json.dumps({'user_id': user.user_id, 'phone_number': user.phone_number, 'expert': user.expert})
     return
 
 
