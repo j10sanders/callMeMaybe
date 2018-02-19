@@ -99,6 +99,7 @@ admin.add_view(MyView(User, db.session))
 admin.add_view(MyView(DiscussionProfile, db.session))
 admin.add_view(MyView(Conversation, db.session))
 admin.add_view(MyView(TimeSlot, db.session))
+admin.add_view(MyView(Review, db.session))
 
 
 ###
@@ -363,32 +364,29 @@ def discussion_profile():
         ratings = []
         rating = 0
         for i in dp.host.reviews:
-            ratings.append({"time": review.time, "stars": review.stars, "comment": review.comment})
-            ratings.append(review.stars)
-            rating += review.stars
+            reviews.append({"stars": i.stars, "comment": i.comment, "guest_initials": i.guest_initials})
+            ratings.append(i.stars)
+            rating += i.stars
         
         if len(reviews) > 0:
             if len(ratings) > 0:
                 averageRating = round(rating/len(ratings),2)
                 profile["averageRating"] = averageRating
-            profile["reviewlist"] = ratings
-        profile["needReview"] = need_review(dp.host, user_id)
-        print(profile['needReview'])
+            profile["reviewlist"] = reviews
+        if len(need_review(dp.host, user_id)) > 0:
+            profile["needReview"] = True
         profile = json.dumps(profile)
         return profile
     return "error"
 
 
 def need_review(host, user_id):
-    print(host)
     # TODO: use joins instead of "has" https://stackoverflow.com/questions/8561470/sqlalchemy-filtering-by-relationship-attribute
     conversation = Conversation \
         .query \
         .filter(Conversation.status == 'confirmed', Conversation.discussion_profile.has(host = host), Conversation.guest.has(user_id = user_id), Conversation.reviewed == False) \
         .all()
-    if len(conversation) > 0:
-        return True
-    return False
+    return conversation
 
 
 @app.route('/deleteDiscussion', methods=["GET"])
@@ -427,7 +425,6 @@ def new_discussion():
         ) #need to push an anon phone # here.
         discussion.anonymous_phone_number = discussion.buy_number().phone_number
         if 'email' in form:
-            pdb.set_trace()
             host.requestExpert = True
             host.messageforAdmins = form['message']
             adminUrl = 'http://localhost:5000/admin/user/edit/?id={}&url=%2Fadmin%2Fuser%2F'.format(host.id)
@@ -484,7 +481,6 @@ def edit_discussion():
 @app.route('/conversations/', methods=["POST"])
 @app.route('/conversations/<discussion_id>', methods=["GET", "POST"])
 def new_conversation():
-    pdb.set_trace()
     try:
         user_id = get_user_id(request.headers.get("Authorization", None))
         guest = User.query.filter(User.user_id == user_id).one()
@@ -499,7 +495,6 @@ def new_conversation():
         guest_phone_number = form['phone_number'].replace('-', '')
     
     if user_id is not None:
-        pdb.set_trace()
         if guest.phone_number != guest_phone_number:
             guest.phone_number = guest_phone_number
 
@@ -523,7 +518,6 @@ def savetimeslots():
     if request.method == 'POST':
         host = User.query.filter(User.user_id == form['user_id']).one()
         times = form['times']
-        pdb.set_trace()
         # Remove old timeslots in case the user deleted any.
         db.session.query(TimeSlot).filter_by(host = host).delete() 
         for i in times:
@@ -534,6 +528,37 @@ def savetimeslots():
             )
             db.session.add(timeslot)
             db.session.commit()
+        return 'success'
+    return 'error'
+
+
+@cross_origin(headers=["Access-Control-Allow-Origin", "*"])
+@cross_origin(headers=["Content-Type", "Authorization"])
+@app.route('/submitreview', methods=["POST"])
+def submitreview():
+    try:
+        user_id = get_user_id(request.headers.get("Authorization", None))
+        guest = User.query.filter(User.user_id == user_id).one()
+    except AttributeError:
+        guest = User.query.filter(User.user_id == 'anonymous').one()
+        user_id = None
+    form=request.get_json()
+    if request.method == 'POST':
+        stars = form['stars']
+        comment = form['comment']
+        dp = DiscussionProfile.query.get(int(form['discussion_id']))
+        review = Review(
+            stars = stars,
+            comment = comment,
+            host = dp.host,
+            guest_id = user_id,
+            guest_initials = "{}{}".format(guest.first_name[0], guest.last_name[0])
+        )
+        conversation = need_review(dp.host, user_id)
+        for i in conversation:
+            i.reviewed = True
+        db.session.add(review)
+        db.session.commit()
         return 'success'
     return 'error'
 

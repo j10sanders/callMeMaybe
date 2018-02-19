@@ -46,7 +46,7 @@ class Conversation(db.Model):
     def send_email(self):
         if self.unsubscribed or self.reviewed or not self.guest:
             return
-        elif datetime.datetime.utcnow() - datetime.timedelta(minutes=15) < self.start_time:
+        elif datetime.datetime.utcnow() < self.start_time:
             return
         elif self.guest.first_name == 'anonymous':
             return

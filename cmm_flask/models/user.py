@@ -20,6 +20,7 @@ class User(db.Model):
     discussion_profiles = db.relationship("DiscussionProfile", back_populates="host")
     timeslots = db.relationship("TimeSlot", back_populates="host")
     reviews = db.relationship("Review", back_populates="host")
+    # reviewsLeft = db.relationship("Review", back_populates="guest")
     requestExpert = db.Column(db.Boolean, nullable=True, default=False)
     messageforAdmins = db.Column(db.String, nullable=True, default='')
 

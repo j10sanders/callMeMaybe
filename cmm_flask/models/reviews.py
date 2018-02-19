@@ -7,14 +7,20 @@ class Review(db.Model):
     __tablename__ = "reviews"
 
     id = db.Column(db.Integer, primary_key=True)
-    stars = db.Column(db.DateTime, nullable=False)
-    comment = db.Column(db.DateTime, nullable=False)
-    host_id = db.Column(db.Integer, db.ForeignKey('users.id'))
+    stars = db.Column(db.Integer, nullable=False)
+    comment = db.Column(db.String, nullable=False)
     host = db.relationship("User", back_populates="reviews")
-    time = db.Column(db.DateTime, nullable=True)
+    host_id = db.Column(db.Integer, db.ForeignKey('users.id', ondelete='CASCADE'))
+    guest_id = db.Column(db.String, nullable=True)
+    guest_initials = db.Column(db.String, nullable=True)
+    time = db.Column(db.DateTime, default=datetime.datetime.now())
+    
 
-    def __init__(self, start_time, end_time, host):
-        self.stars = start_time
-        self.comment = end_time
-        self.host = host
-        self.time = datetime.datetime.now()
+
+    # def __init__(self, stars, comment, host, guest):
+    #     print(stars, comment, host, guest)
+    #     self.stars = stars
+    #     self.comment = comment
+    #     self.host = host
+    #     self.time = datetime.datetime.now()
+    #     self.guest = guest
