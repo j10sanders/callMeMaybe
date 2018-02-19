@@ -4,6 +4,7 @@ from twilio.rest import Client
 import datetime, pytz
 from sqlalchemy.sql import func
 import pdb
+import smtplib
 
 db = app_db()
 
@@ -43,14 +44,31 @@ class Conversation(db.Model):
         return '<Conversation {0}>'.format(self.id)
 
     def send_email(self):
-        if self.unsubscribed or self.reviewed or not guest:
+        if self.unsubscribed or self.reviewed or not self.guest:
             return
-        elif datetime.datetime.now() - datetime.timedelta(minutes=15) < self.start_time:
+        elif datetime.datetime.utcnow() - datetime.timedelta(minutes=15) < self.start_time:
+            return
+        elif self.guest.first_name == 'anonymous':
             return
         else:
-            return {'guest first_name': self.guest.first_name, 'guest last_name': self.guest.last_name,
-            'host first_name': self.discussion_profile.host.first_name, 'host last_name': self.discussion_profile.host.last_name, 
-            'discussion_profile_id': self.discussion_profile_id}
+            print(datetime.datetime.utcnow() - datetime.timedelta(minutes=15), self.start_time)
+            # gfn = self.guest.first_name
+            # gln = self.guest.last_name
+            # hfn = self.discussion_profile.host.first_name,
+            # hln = self.discussion_profile.host.last_name
+            # content = 'Subject: How was your conversation with {} {}!\nHi, {} {}.  We hope your conversation with {} {} was helpful.  Please leave a review here http://localhost:3000/discussionProfile?id={} '.format(
+            #     hfn, hln, gfn, gln, hfn, hln, discussion_profile_id)
+            # smtp_server = smtplib.SMTP('smtp.gmail.com', 587)
+            # smtp_server.ehlo()
+            # smtp_server.starttls()
+            # smtp_server.login('pwreset.winthemini@gmail.com', GMAIL)
+            # smtp_server.sendmail('pwreset.winthemini@gmail.com', 'jonsandersss@gmail.com', content)
+            # smtp_server.quit()
+            print(self.id)
+
+            # {'guest first_name': self.guest.first_name, 'guest last_name': self.guest.last_name,
+            # 'host first_name': self.discussion_profile.host.first_name, 'host last_name': self.discussion_profile.host.last_name, 
+            # 'discussion_profile_id': self.discussion_profile_id}
 
     def notify_host(self):
         fmt = '%Y-%m-%d %I:%M %p %Z'

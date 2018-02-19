@@ -21,6 +21,7 @@ from cmm_flask.models.user import User
 from cmm_flask.models.discussion_profile import DiscussionProfile
 from cmm_flask.models.conversation import Conversation
 from cmm_flask.models.timeslot import TimeSlot
+from cmm_flask.models.reviews import Review
 from cmm_flask.models.admins import AdminUser
 from werkzeug.security import check_password_hash, generate_password_hash
 from werkzeug.exceptions import Forbidden
@@ -33,7 +34,6 @@ from flask.ext.login import current_user
 from sqlalchemy.exc import IntegrityError
 from flask_admin.contrib import sqla
 import smtplib
-from apscheduler.schedulers.background import BackgroundScheduler
 
 ENV_FILE = find_dotenv()
 if ENV_FILE:
@@ -42,25 +42,6 @@ GMAIL = env.get("GMAIL")
 AUTH0_DOMAIN = env.get("AUTH0_DOMAIN")
 AUTH0_AUDIENCE = 'https://jonsanders.auth0.com/api/v2/'
 ALGORITHMS = ["RS256"]
-
-# def sendEmails():
-#     with app.app_context():
-#         conversations = Conversation.query.all()
-#         for convo in conversations:
-#             print(convo.start_time)
-#         # adminUrl = 'http://localhost:5000/admin/user/edit/?id={}&url=%2Fadmin%2Fuser%2F'.format(host.id)
-#         # content = 'Subject: New Expert Request!\n{} with message {}'.format(adminUrl, form['message'])
-#         # smtp_server = smtplib.SMTP('smtp.gmail.com', 587)
-#         # smtp_server.ehlo()
-#         # smtp_server.starttls()
-#         # smtp_server.login('pwreset.winthemini@gmail.com', GMAIL)
-#         # smtp_server.sendmail('pwreset.winthemini@gmail.com', 'jonsandersss@gmail.com', content)
-#         # smtp_server.quit()
-
-# scheduler = BackgroundScheduler()
-# scheduler.add_job(sendEmails, 'interval', seconds=3)
-# scheduler.start()
-
 
 class MyView(sqla.ModelView):
 
@@ -374,12 +355,40 @@ def discussion_profile():
         is_users = False
         if dp.host.user_id == user_id:
             is_users = True
-        profile=json.dumps({'host': dp.host.user_id, 'image': dp.image_url, 'description': dp.description,
+        profile={'host': dp.host.user_id, 'image': dp.image_url, 'description': dp.description,
             'anonymous_phone_number': dp.anonymous_phone_number, 'auth_pic': dp.host.auth_pic, 'first_name':dp.host.first_name, 
             'last_name':dp.host.last_name, 'is_users': is_users, 'price': dp.price, 'otherProfile': dp.otherProfile,
-        })
+        }
+        reviews = []
+        ratings = []
+        rating = 0
+        for i in dp.host.reviews:
+            ratings.append({"time": review.time, "stars": review.stars, "comment": review.comment})
+            ratings.append(review.stars)
+            rating += review.stars
+        
+        if len(reviews) > 0:
+            if len(ratings) > 0:
+                averageRating = round(rating/len(ratings),2)
+                profile["averageRating"] = averageRating
+            profile["reviewlist"] = ratings
+        profile["needReview"] = need_review(dp.host, user_id)
+        print(profile['needReview'])
+        profile = json.dumps(profile)
         return profile
     return "error"
+
+
+def need_review(host, user_id):
+    print(host)
+    # TODO: use joins instead of "has" https://stackoverflow.com/questions/8561470/sqlalchemy-filtering-by-relationship-attribute
+    conversation = Conversation \
+        .query \
+        .filter(Conversation.status == 'confirmed', Conversation.discussion_profile.has(host = host), Conversation.guest.has(user_id = user_id), Conversation.reviewed == False) \
+        .all()
+    if len(conversation) > 0:
+        return True
+    return False
 
 
 @app.route('/deleteDiscussion', methods=["GET"])
@@ -475,11 +484,13 @@ def edit_discussion():
 @app.route('/conversations/', methods=["POST"])
 @app.route('/conversations/<discussion_id>', methods=["GET", "POST"])
 def new_conversation():
+    pdb.set_trace()
     try:
         user_id = get_user_id(request.headers.get("Authorization", None))
         guest = User.query.filter(User.user_id == user_id).one()
     except AttributeError:
         guest = User.query.filter(User.user_id == 'anonymous').one()
+        user_id = None
     discussion_id = request.query_string[3:] # ex) 'id=423'
     discussion_profile = None
     form=request.get_json()
@@ -487,11 +498,13 @@ def new_conversation():
     if 'phone_number' in form:
         guest_phone_number = form['phone_number'].replace('-', '')
     
-    if user_id:
+    if user_id is not None:
+        pdb.set_trace()
         if guest.phone_number != guest_phone_number:
             guest.phone_number = guest_phone_number
 
     time = form['start_time']
+    print(time, "TIME")
     discussion_profile = DiscussionProfile.query.get(int(discussion_id))
     conversation = Conversation(form['message'], discussion_profile, guest_phone_number=guest_phone_number, start_time=time, guest=guest)
     db.session.add(conversation)
@@ -510,6 +523,7 @@ def savetimeslots():
     if request.method == 'POST':
         host = User.query.filter(User.user_id == form['user_id']).one()
         times = form['times']
+        pdb.set_trace()
         # Remove old timeslots in case the user deleted any.
         db.session.query(TimeSlot).filter_by(host = host).delete() 
         for i in times:
