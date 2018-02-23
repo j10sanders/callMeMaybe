@@ -270,11 +270,8 @@ def register():
         if form['user_id']:
             user_id = form['user_id']
         if "phone_number" in form:
-            tel = form['phone_number'].replace('-', '') #"+{0}{1}".format(form.country_code.data, form.phone_number.data)
-        
+            tel = form['phone_number'].replace('-', '')
         if User.query.filter(User.phone_number == tel).count() > 0:
-            #form.email.errors.append("Phone number already in use.")
-            #return view('register', form)
             return "Phone number already in use."
         user = User(
                 user_id=form['user_id'],
@@ -284,14 +281,15 @@ def register():
                 phone_number=tel,
                 area_code=tel[2:5],
             )
-
         db.session.add(user)
         db.session.commit()
         return "done"
-
     if User.query.filter(User.user_id == user_id).count() > 0:
+        user = User.query.filter(User.user_id == user_id).one()
+        if len(user.discussion_profiles) > 0:
+            dpId = {'dp': user.discussion_profiles[0].id}
+            return json.dumps(dpId)
         return "user previously registered."
-
     else: 
         return "register phone"
 
@@ -352,6 +350,9 @@ def discussion_profile():
     discussion_profile = None
     if discussion_id is not None:
         dp = DiscussionProfile.query.get(int(discussion_id))
+        if not dp.host.expert:
+            return "not an expert yet"
+
         if not dp.anonymous_phone_number:
             dp.buy_number().phone_number
             db.session.add(dp)
