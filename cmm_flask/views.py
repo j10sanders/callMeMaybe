@@ -287,7 +287,6 @@ def register():
 
         db.session.add(user)
         db.session.commit()
-        print(form, "HELLO")
         return "done"
 
     if User.query.filter(User.user_id == user_id).count() > 0:
@@ -353,6 +352,10 @@ def discussion_profile():
     discussion_profile = None
     if discussion_id is not None:
         dp = DiscussionProfile.query.get(int(discussion_id))
+        if not dp.anonymous_phone_number:
+            dp.buy_number().phone_number
+            db.session.add(dp)
+            db.session.commit()
         is_users = False
         if dp.host.user_id == user_id:
             is_users = True
@@ -388,24 +391,6 @@ def need_review(host, user_id):
         .all()
     return conversation
 
-
-@app.route('/deleteDiscussion', methods=["GET"])
-@app.route('/deleteDiscussion/<discussion_id>', methods=["GET"])
-@cross_origin(headers=["Content-Type", "Authorization"])
-def deleted_discussion(): 
-    try:
-        user_id = get_user_id(request.headers.get("Authorization", None))
-    except AttributeError:
-        user_id = "nope"
-    discussion_id = request.query_string[3:] # ex) 'id=423'
-    if discussion_id is not None:
-        dp = DiscussionProfile.query.get(int(discussion_id))
-        if dp.host.user_id == user_id:
-            db.session.delete(dp)
-            db.session.commit()
-            return "deleted"
-    return "error"
-
 @app.route('/api/discussions/new', methods=["GET", "POST"])
 # @cross_origin(headers=["Content-Type", "Authorization"])
 @cross_origin(headers=["Access-Control-Allow-Origin", "*"])
@@ -423,7 +408,7 @@ def new_discussion():
             price = float(form['price']),
             timezone = form['timezone'],
         ) #need to push an anon phone # here.
-        discussion.anonymous_phone_number = discussion.buy_number().phone_number
+        # discussion.anonymous_phone_number = discussion.buy_number().phone_number
         if 'email' in form:
             host.requestExpert = True
             host.messageforAdmins = form['message']
@@ -435,11 +420,27 @@ def new_discussion():
             smtp_server.login('pwreset.winthemini@gmail.com', GMAIL)
             smtp_server.sendmail('pwreset.winthemini@gmail.com', 'jonsandersss@gmail.com', content)
             smtp_server.quit()
-
         db.session.add(discussion)
         db.session.commit()
         return 'success'
+    return "error"
 
+
+@app.route('/deleteDiscussion', methods=["GET"])
+@app.route('/deleteDiscussion/<discussion_id>', methods=["GET"])
+@cross_origin(headers=["Content-Type", "Authorization"])
+def deleted_discussion(): 
+    try:
+        user_id = get_user_id(request.headers.get("Authorization", None))
+    except AttributeError:
+        user_id = "nope"
+    discussion_id = request.query_string[3:] # ex) 'id=423'
+    if discussion_id is not None:
+        dp = DiscussionProfile.query.get(int(discussion_id))
+        if dp.host.user_id == user_id:
+            db.session.delete(dp)
+            db.session.commit()
+            return "deleted"
     return "error"
 
 
@@ -628,7 +629,10 @@ def getprofile():
     except AttributeError:
         user_id = "nope"
         return "not authenticated"
-    user = User.query.filter(User.user_id == user_id).one()
+    try: 
+        user = User.query.filter(User.user_id == user_id).one()
+    except:
+        return "not authenticated"
     if user:
         return json.dumps({'user_id': user.user_id, 'phone_number': user.phone_number, 'expert': user.expert})
     return
@@ -648,7 +652,8 @@ def confirm_conversation():
         if 'yes' in form.Body.data or 'accept' in form.Body.data or 'Accept' in form.Body.data:
             conversation.confirm()
             if conversation.discussion_profile.anonymous_phone_number is None:
-                conversation.discussion_profile.buy_number(user.area_code)
+                return "no number for some reason"
+                # conversation.discussion_profile.buy_number(user.area_code)
         else:
             conversation.reject()
         db.session.commit()
