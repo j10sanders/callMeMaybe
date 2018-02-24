@@ -22,6 +22,7 @@ class DefaultConfig(object):
     AUTH0_CLIENT_ID = os.environ.get("CLIENT_ID")
     AUTH0_DOMAIN = os.environ.get("DOMAIN")
     AUTH0_CLIENT_SECRET = os.environ.get("CLIENT_SECRET")
+    AUTH0_AUDIENCE = 'https://jonsanders.auth0.com/api/v2/'
 
 class DevelopmentConfig(DefaultConfig):
     DEBUG = True
@@ -30,6 +31,7 @@ class DevelopmentConfig(DefaultConfig):
 
 class HerokuConfig(DefaultConfig):
     DEBUG = True
+    AUTH0_AUDIENCE = 'https://dimpull.auth0.com/api/v2/'
     # SQLALCHEMY_DATABASE_URI = 'postgresql://postgres:password@localhost/guestnumber'
 
 

@@ -19,6 +19,6 @@ def sendEmails():
     atexit.register(lambda: scheduler.shutdown())
 
 scheduler = BackgroundScheduler()
-scheduler.add_job(sendEmails, 'interval', seconds=30)
+scheduler.add_job(sendEmails, 'interval', days=1)
 scheduler.start()
 

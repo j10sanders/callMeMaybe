@@ -40,7 +40,7 @@ if ENV_FILE:
     load_dotenv(ENV_FILE)
 GMAIL = env.get("GMAIL")
 AUTH0_DOMAIN = env.get("AUTH0_DOMAIN")
-AUTH0_AUDIENCE = 'https://jonsanders.auth0.com/api/v2/'
+AUTH0_AUDIENCE = env.get("AUTH0_AUDIENCE")
 ALGORITHMS = ["RS256"]
 
 class MyView(sqla.ModelView):
@@ -82,7 +82,7 @@ def register_post():
         db.session.add(name)
         db.session.commit()
         login_user(name)
-        return redirect(request.args.get("next") or url_for("entries"))
+        return redirect(request.args.get("next") or url_for("admin.index"))
     except IntegrityError:
         session.rollback()
         return redirect(url_for("register_get"))
