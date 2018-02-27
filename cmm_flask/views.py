@@ -33,7 +33,7 @@ from flask.ext.login import login_user, logout_user, login_required
 from flask.ext.login import current_user
 from sqlalchemy.exc import IntegrityError
 from flask_admin.contrib import sqla
-import smtplib
+import yagmail
 
 ENV_FILE = find_dotenv()
 if ENV_FILE:
@@ -413,17 +413,24 @@ def new_discussion():
         if 'email' in form:
             host.requestExpert = True
             host.messageforAdmins = form['message']
+            db.session.add(discussion)
+            db.session.commit()
+            return 'success'
+            #Yagmail: 
             adminUrl = 'http://localhost:5000/admin/user/edit/?id={}&url=%2Fadmin%2Fuser%2F'.format(host.id)
-            content = 'Subject: New Expert Request!\n{} with message {}'.format(adminUrl, form['message'])
-            smtp_server = smtplib.SMTP('smtp.gmail.com', 587)
-            smtp_server.ehlo()
-            smtp_server.starttls()
-            smtp_server.login('pwreset.winthemini@gmail.com', GMAIL)
-            smtp_server.sendmail('pwreset.winthemini@gmail.com', 'jonsandersss@gmail.com', content)
-            smtp_server.quit()
-        db.session.add(discussion)
-        db.session.commit()
-        return 'success'
+            yag = yagmail.SMTP('pwreset.winthemini@gmail.com', GMAIL)
+            contents = [adminUrl]
+            print(contents)
+            yag.send(to = 'jonsandersss@gmail.com', subject='New Expert Request', contents=contents)
+            
+            # content = 'Subject: New Expert Request!\n{} with message {}'.format(adminUrl, form['message'])
+            # smtp_server = smtplib.SMTP('smtp.gmail.com', 587)
+            # smtp_server.ehlo()
+            # smtp_server.starttls()
+            # smtp_server.login('pwreset.winthemini@gmail.com', GMAIL)
+            # smtp_server.sendmail('pwreset.winthemini@gmail.com', 'jonsandersss@gmail.com', content)
+            # smtp_server.quit()
+        return "unknown"
     return "error"
 
 
@@ -692,20 +699,34 @@ def exchange_voice():
 
 
 def _gather_outgoing_phone_number(incoming_phone_number, anonymous_phone_number):
-    conversation = Conversation.query \
-        .filter(DiscussionProfile.anonymous_phone_number == anonymous_phone_number) \
-        .first()
-    if conversation.guest_phone_number == incoming_phone_number:
-        return conversation.discussion_profile.host.phone_number
+    # conversation = Conversation.query \
+    #     .filter(DiscussionProfile.anonymous_phone_number == anonymous_phone_number) \
+    #     .first()
 
-    difference = (datetime.datetime.now() - conversation.start_time).total_seconds() / 60
+    pdb.set_trace()
+    dp = DiscussionProfile.query.filter(DiscussionProfile.anonymous_phone_number == anonymous_phone_number).one()
+    conversations = dp.conversations
+    conversation = None
+    for i in conversations:
+        if i.guest_phone_number == incoming_phone_number:
+            conversation = i
+
+    print("guest number: ", conversation.guest_phone_number, anonymous_phone_number)
+    # if conversation.guest_phone_number == incoming_phone_number:
+    #     return conversation.discussion_profile.host.phone_number
+
+    difference = (datetime.datetime.utcnow() - conversation.start_time).total_seconds() / 60
+    print(datetime.datetime.now(), conversation.start_time, conversation.discussion_profile, conversation.message)
     if difference > 0:
         raise ValueError("The timeslot you booked doesn't start for {} minutes".format(str(round(difference,1))))
     else:
+        print(difference)
         if difference < -10:
-            raise ValueError("You needed to call within 10minutes of your booked timeslot.  It has been {} minutes since your booking.".format(str(difference*-1)))
+            raise ValueError("You needed to call within 10 minutes of your booked timeslot.  It has been {} minutes since your booking.".format(str(difference*-1)))
+        elif conversation.guest_phone_number == incoming_phone_number:
+            return conversation.discussion_profile.host.phone_number
         else:
-            return conversation.guest_phone_number
+            return "fail"
 
 
 def _respond_message(message):
