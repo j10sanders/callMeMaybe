@@ -17,7 +17,11 @@ class DiscussionProfile(db.Model):
     host = db.relationship("User", back_populates="discussion_profiles")
     conversations = db.relationship("Conversation", back_populates="discussion_profile", passive_deletes=True)
     anonymous_phone_number = db.Column(db.String, nullable=True)
-    timezone = db.Column(db.String, server_default='America/New_York', nullable=False )
+    timezone = db.Column(db.String, server_default='America/New_York', nullable=False)
+    who = db.Column(db.String, nullable=True)
+    origin = db.Column(db.String, nullable=True)
+    excites = db.Column(db.String, nullable=True)
+    helps = db.Column(db.String, nullable=True)
 
     def __init__(self, description, image_url, host, otherProfile, price, timezone):
         self.description = description

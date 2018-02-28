@@ -267,10 +267,16 @@ def register():
         user_id = "nope"
     form=request.get_json()
     if request.method == 'POST':
-        if form['user_id']:
-            user_id = form['user_id']
         if "phone_number" in form:
             tel = form['phone_number'].replace('-', '')
+        if form['justNumber']:
+            user = User.query.filter(User.user_id == form['user_id']).one()
+            user.phone_number = tel
+            db.session.commit()
+            return "updated phone_number"
+        tel = ''
+        if form['user_id']:
+            user_id = form['user_id']
         if User.query.filter(User.phone_number == tel).count() > 0:
             return "Phone number already in use."
         user = User(
@@ -408,6 +414,7 @@ def new_discussion():
             otherProfile = form['otherProfile'],
             price = float(form['price']),
             timezone = form['timezone'],
+            who = form['who']
         ) #need to push an anon phone # here.
         # discussion.anonymous_phone_number = discussion.buy_number().phone_number
         if 'email' in form:
@@ -467,6 +474,10 @@ def edit_discussion():
             dp.otherProfile = form['otherProfile'],
             dp.price = float(form['price']),
             dp.timezone = form['timezone'],
+            dp.who = form['who'],
+            dp.excites = form['excites'],
+            dp.origin = form['origin'],
+            dp.helps = form['helps'],
             db.session.commit()
             return 'success'
         else: 
@@ -480,7 +491,17 @@ def edit_discussion():
         if dp.host.user_id != user_id:
             return "Not this user's"
 
-        return jsonify({'description': dp.description, 'image_url': dp.image_url, 'price': dp.price, 'otherProfile': dp.otherProfile, 'timezone': dp.timezone})
+        who, excites, helps, origin = '', '', '', ''
+        if dp.who:
+            who = dp.who
+        if dp.excites:
+            excites = dp.excites
+        if dp.origin:
+            excites = dp.origin
+        if dp.helps:
+            excites = dp.helps
+        return jsonify({'description': dp.description, 'image_url': dp.image_url, 'price': dp.price, 'otherProfile': dp.otherProfile, 'timezone': dp.timezone,
+            'who': who, 'excites': excites, 'origin': origin, "helps": helps})
 
     return "error"
 
