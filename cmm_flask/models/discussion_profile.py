@@ -23,13 +23,14 @@ class DiscussionProfile(db.Model):
     excites = db.Column(db.String, nullable=True)
     helps = db.Column(db.String, nullable=True)
 
-    def __init__(self, description, image_url, host, otherProfile, price, timezone):
+    def __init__(self, description, image_url, host, otherProfile, price, timezone, who):
         self.description = description
         self.image_url = image_url
         self.host = host
         self.otherProfile = otherProfile
         self.price = price
         self.timezone = timezone
+        self.who = who
 
     def __repr__(self):
         return '<DiscussionProfile {0} {1}>'.format(self.id, self.description)
