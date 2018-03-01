@@ -269,15 +269,18 @@ def register():
     if request.method == 'POST':
         if "phone_number" in form:
             tel = form['phone_number'].replace('-', '')
-        # if form['justNumber']:
-        #     user = User.query.filter(User.user_id == form['user_id']).one()
-        #     user.phone_number = tel
-        #     db.session.commit()
-        #     return "updated phone_number"
         if form['user_id']:
             user_id = form['user_id']
         if User.query.filter(User.phone_number == tel).count() > 0:
             return "Phone number already in use."
+        if User.query.filter(User.user_id == form['user_id']).count() > 0:
+            user = User.query.filter(User.user_id == form['user_id']).first()
+            if User.query.filter(User.phone_number == tel).count() > 0:
+                return "Phone number already in use."
+            user.phone_number = tel
+            user.area_code=tel[2:5]
+            db.session.commit()
+            return "Updated"
         user = User(
                 user_id=form['user_id'],
                 first_name=form['first_name'],
@@ -421,7 +424,6 @@ def new_discussion():
             host.messageforAdmins = form['message']
             db.session.add(discussion)
             db.session.commit()
-            return 'success'
             #Yagmail: 
             adminUrl = 'http://localhost:5000/admin/user/edit/?id={}&url=%2Fadmin%2Fuser%2F'.format(host.id)
             yag = yagmail.SMTP('pwreset.winthemini@gmail.com', GMAIL)
@@ -436,6 +438,7 @@ def new_discussion():
             # smtp_server.login('pwreset.winthemini@gmail.com', GMAIL)
             # smtp_server.sendmail('pwreset.winthemini@gmail.com', 'jonsandersss@gmail.com', content)
             # smtp_server.quit()
+            return 'success'
         return "unknown"
     return "error"
 
