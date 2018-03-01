@@ -425,7 +425,6 @@ def new_discussion():
             db.session.add(discussion)
             db.session.commit()
             #Yagmail: 
-            print(GMAIL)
             adminUrl = 'http://localhost:5000/admin/user/edit/?id={}&url=%2Fadmin%2Fuser%2F'.format(host.id)
             yag = yagmail.SMTP('pwreset.winthemini@gmail.com', GMAIL)
             contents = [adminUrl]
