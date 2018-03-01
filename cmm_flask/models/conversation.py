@@ -81,14 +81,14 @@ class Conversation(db.Model):
                            #                 #name=self.guest.name,
                            #                 description=self.discussion_profile.description,
                            #                 message=self.message))
-                           "Hey!  You have a Dimpull request for a conversation at {} about: '{}'  Reply [accept] or [reject]".format(in_local.strftime(fmt), self.message))
+                           "You've been booked for a dimpull conversation at {}.  The user says, '{}'.  If you need to cancel, please login to dimpull.com".format(in_local.strftime(fmt), self.message))
 
     def notify_guest(self):
         self._send_message(self.guest_phone_number,
                            # render_template('messages/sms_guest.txt',
                            #                 description=self.discussion_profile.description,
                            #                 status=self.status))
-                          "hello guest. your call was something")
+                          "Your call has been booked.")
         ### need error handling.  When this fails I should know, and it should be save to this conversation.
 
 

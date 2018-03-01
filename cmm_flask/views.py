@@ -49,7 +49,6 @@ class MyView(sqla.ModelView):
         return current_user.is_authenticated
 
     def inaccessible_callback(self, name, **kwargs):
-        # redirect to login page if user doesn't have access
         return redirect(url_for('login_get', next=request.url))
         redirect(request.args.get('next') or url_for("admin.index"))
 
@@ -63,7 +62,6 @@ def login_post():
     name = request.form["name"]
     password = request.form["password"]
     user = AdminUser.query.filter(AdminUser.name == name).one()
-    # host = User.query.filter(User.user_id == form['user_id']).one()
     if not user or not check_password_hash(user.password, password):
         return redirect(url_for("login_get"))
     login_user(user, remember=True)
@@ -218,10 +216,9 @@ def requires_auth(f):
                         "description": "Unable to find appropriate key"}, 400)
     return decorated
 
-###
+
 def get_user_id(t):
     s_t = t.split()
-    # pdb.set_trace()
     token = s_t[1]
     jsonurl = urlopen("https://"+AUTH0_DOMAIN+"/.well-known/jwks.json")
     jwks = json.loads(jsonurl.read())
@@ -269,11 +266,11 @@ def register():
     if request.method == 'POST':
         if "phone_number" in form:
             tel = form['phone_number'].replace('-', '')
-        if form['user_id']:
+        if 'user_id' in form:
             user_id = form['user_id']
         if User.query.filter(User.phone_number == tel).count() > 0:
             return "Phone number already in use."
-        if User.query.filter(User.user_id == form['user_id']).count() > 0:
+        if User.query.filter(User.user_id == user_id).count() > 0:
             user = User.query.filter(User.user_id == form['user_id']).first()
             if User.query.filter(User.phone_number == tel).count() > 0:
                 return "Phone number already in use."
@@ -282,7 +279,7 @@ def register():
             db.session.commit()
             return "Updated"
         user = User(
-                user_id=form['user_id'],
+                user_id=user_id,
                 first_name=form['first_name'],
                 last_name=form['last_name'],
                 auth_pic=form['auth_pic'],
@@ -310,9 +307,6 @@ def expert_request():
 
 
 @app.route('/api/discussions', methods=["GET"])
-@cross_origin(headers=["Content-Type", "Authorization"])
-# @cross_origin(headers=["Access-Control-Allow-Origin", "*"])
-# @requires_auth
 def discussions():
     discussion_profiles = DiscussionProfile.query.all()
     obj = []
@@ -401,14 +395,16 @@ def need_review(host, user_id):
     return conversation
 
 @app.route('/api/discussions/new', methods=["GET", "POST"])
-# @cross_origin(headers=["Content-Type", "Authorization"])
+@cross_origin(headers=["Content-Type", "Authorization"])
 @cross_origin(headers=["Access-Control-Allow-Origin", "*"])
 def new_discussion():
     form=request.get_json()
     if request.method == 'POST':
-        host = User.query.filter(User.user_id == form['user_id']).one()
-        # host = session.query(User).filter_by(user_id=form['user_id']).one()
-        # anonymous_phone_number = DiscussionProfile.buy_number() #missing required self.
+        try:
+            user_id = get_user_id(request.headers.get("Authorization", None))
+        except AttributeError:
+            user_id = "nope"
+        host = User.query.filter(User.user_id == user_id).one()
         discussion = DiscussionProfile(
             description = form['description'], 
             image_url = form['image_url'], 
@@ -424,11 +420,10 @@ def new_discussion():
             host.messageforAdmins = form['message']
             db.session.add(discussion)
             db.session.commit()
-            #Yagmail: 
+
             adminUrl = 'http://localhost:5000/admin/user/edit/?id={}&url=%2Fadmin%2Fuser%2F'.format(host.id)
             yag = yagmail.SMTP('pwreset.winthemini@gmail.com', GMAIL)
             contents = [adminUrl]
-            # print(contents)
             yag.send(to = 'jonsandersss@gmail.com', subject='New Expert Request', contents=contents)
             
             # content = 'Subject: New Expert Request!\n{} with message {}'.format(adminUrl, form['message'])
@@ -517,7 +512,7 @@ def new_conversation():
         user_id = get_user_id(request.headers.get("Authorization", None))
         guest = User.query.filter(User.user_id == user_id).one()
     except AttributeError:
-        guest = User.query.filter(User.user_id == 'anonymous').one()
+        guest = User.query.filter(User.user_id == 'Anonymous').one()
         user_id = None
     discussion_id = request.query_string[3:] # ex) 'id=423'
     discussion_profile = None
@@ -635,20 +630,20 @@ def gettimeslots():
 
     # return 'error'
 
-@app.route('/discussions/test_new', methods=["GET", "POST"])
-def test_new_discussion():
-    form = DiscussionProfileForm()
-    if request.method == 'POST':
-        if form.validate_on_submit():
-            host = User.query.get(current_user.get_id())
-            # anonymous_phone_number = DiscussionProfile.buy_number() #missing required self.
-            discussion = DiscussionProfile(form.description.data, form.image_url.data, host) #need to push an anon phone # here.
-            discussion.anonymous_phone_number = discussion.test_buy_number()
-            db.session.add(discussion)
-            db.session.commit()
-            return redirect_to('discussions')
+# @app.route('/discussions/test_new', methods=["GET", "POST"])
+# def test_new_discussion():
+#     form = DiscussionProfileForm()
+#     if request.method == 'POST':
+#         if form.validate_on_submit():
+#             host = User.query.get(current_user.get_id())
+#             # anonymous_phone_number = DiscussionProfile.buy_number() #missing required self.
+#             discussion = DiscussionProfile(form.description.data, form.image_url.data, host) #need to push an anon phone # here.
+#             discussion.anonymous_phone_number = discussion.test_buy_number()
+#             db.session.add(discussion)
+#             db.session.commit()
+#             return redirect_to('discussions')
 
-    return view('discussion_new', form)
+#     return view('discussion_new', form)
 
 @cross_origin(headers=["Access-Control-Allow-Origin", "*"])
 @cross_origin(headers=["Content-Type", "Authorization"])
@@ -726,7 +721,6 @@ def _gather_outgoing_phone_number(incoming_phone_number, anonymous_phone_number)
     #     .filter(DiscussionProfile.anonymous_phone_number == anonymous_phone_number) \
     #     .first()
 
-    pdb.set_trace()
     dp = DiscussionProfile.query.filter(DiscussionProfile.anonymous_phone_number == anonymous_phone_number).one()
     conversations = dp.conversations
     conversation = None
@@ -739,13 +733,13 @@ def _gather_outgoing_phone_number(incoming_phone_number, anonymous_phone_number)
     #     return conversation.discussion_profile.host.phone_number
 
     difference = (datetime.datetime.utcnow() - conversation.start_time).total_seconds() / 60
-    print(datetime.datetime.now(), conversation.start_time, conversation.discussion_profile, conversation.message)
-    if difference > 0:
-        raise ValueError("The timeslot you booked doesn't start for {} minutes".format(str(round(difference,1))))
+    # print(datetime.datetime.now(), conversation.start_time, conversation.discussion_profile, conversation.message)
+    if difference > 30:
+        raise ValueError("You needed to call within 10 minutes of your booked timeslot.  It has been {} minutes since your booking.".format(str(difference*-1)))
     else:
         print(difference)
-        if difference < -10:
-            raise ValueError("You needed to call within 10 minutes of your booked timeslot.  It has been {} minutes since your booking.".format(str(difference*-1)))
+        if difference < -1:
+            raise ValueError("The timeslot you booked doesn't start for {} minutes".format(str(round(difference,1))))
         elif conversation.guest_phone_number == incoming_phone_number:
             return conversation.discussion_profile.host.phone_number
         else:
@@ -759,13 +753,3 @@ def _respond_message(message):
     # response = twilio.twiml.Response()
     # response.message(message)
     return response
-
-
-
-# Admin.add_view(ModelView(User, db.session))
-
-# Admin.add_view(ModelView(DiscussionProfile, db.session))
-
-# Admin.add_view(ModelView(Conversation, db.session))
-
-# Admin.add_view(ModelView(TimeSlot, db.session))
