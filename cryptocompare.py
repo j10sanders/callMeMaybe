@@ -54,6 +54,13 @@
 
 # if __name__ == "__main__":
 #     app.run(debug=True)
-import cryptocompare
-coin_data = cryptocompare.get_price('ETH',curr='USD')
-print(coin_data['ETH']['USD'])
+# import cryptocompare
+# coin_data = cryptocompare.get_price('ETH',curr='USD')
+# print(coin_data['ETH']['USD'])
+
+import yagmail
+adminUrl = 'hi'
+yag = yagmail.SMTP('admin@dimpull.com', '.QN%ptuiHSGzU')
+contents = [adminUrl]
+# print(contents)
+yag.send(to = 'jonsandersss@gmail.com', subject='New Expert Request', contents=contents)
