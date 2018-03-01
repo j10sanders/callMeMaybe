@@ -34,6 +34,7 @@ from flask.ext.login import current_user
 from sqlalchemy.exc import IntegrityError
 from flask_admin.contrib import sqla
 import yagmail
+import dateutil.parser
 
 ENV_FILE = find_dotenv()
 if ENV_FILE:
@@ -494,9 +495,9 @@ def edit_discussion():
         if dp.excites:
             excites = dp.excites
         if dp.origin:
-            excites = dp.origin
+            origin = dp.origin
         if dp.helps:
-            excites = dp.helps
+            helps = dp.helps
         return jsonify({'description': dp.description, 'image_url': dp.image_url, 'price': dp.price, 'otherProfile': dp.otherProfile, 'timezone': dp.timezone,
             'who': who, 'excites': excites, 'origin': origin, "helps": helps})
 
@@ -529,11 +530,16 @@ def new_conversation():
     print(time, "TIME")
     discussion_profile = DiscussionProfile.query.get(int(discussion_id))
     conversation = Conversation(form['message'], discussion_profile, guest_phone_number=guest_phone_number, start_time=time, guest=guest)
+    host = discussion_profile.host
+    newdate = dateutil.parser.parse(time)
+    naive = newdate.replace(tzinfo=None)
+    for i in host.timeslots:
+        if i.start_time == naive:
+            db.session.delete(i)
+
     db.session.add(conversation)
     db.session.commit()
-
     conversation.notify_host()
-
     return 'whitelisted'
 
 
@@ -735,9 +741,8 @@ def _gather_outgoing_phone_number(incoming_phone_number, anonymous_phone_number)
     difference = (datetime.datetime.utcnow() - conversation.start_time).total_seconds() / 60
     # print(datetime.datetime.now(), conversation.start_time, conversation.discussion_profile, conversation.message)
     if difference > 30:
-        raise ValueError("You needed to call within 10 minutes of your booked timeslot.  It has been {} minutes since your booking.".format(str(difference*-1)))
+        raise ValueError("Sorry, you needed to call within the 30 minute timeslot you booked.  It has been {} minutes since the start of your timeslot.".format(str(round(difference,1))))
     else:
-        print(difference)
         if difference < -1:
             raise ValueError("The timeslot you booked doesn't start for {} minutes".format(str(round(difference,1))))
         elif conversation.guest_phone_number == incoming_phone_number:
