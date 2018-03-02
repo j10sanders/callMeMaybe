@@ -88,7 +88,7 @@ def register_post():
 
 @app.route("/log_out", methods=["GET", "POST"])
 def logout():
-    print("LOGOUT")
+    # print("LOGOUT")
     logout_user()
     return redirect(url_for("login_get"))
 
@@ -366,7 +366,6 @@ def discussion_profile():
         who, excites, helps, origin = '', '', '', ''
         if dp.who:
             who = dp.who
-            print("who", who)
         if dp.excites:
             excites = dp.excites
         if dp.origin:
@@ -538,7 +537,6 @@ def new_conversation():
             guest.phone_number = guest_phone_number
 
     time = form['start_time']
-    print(time, "TIME")
     discussion_profile = DiscussionProfile.query.get(int(discussion_id))
     conversation = Conversation(form['message'], discussion_profile, guest_phone_number=guest_phone_number, start_time=time, guest=guest)
     host = discussion_profile.host
@@ -621,7 +619,6 @@ def getmytimeslots():
     obj = []
     for i in host.timeslots:
         if datetime.datetime.now() < i.end_time:
-            print(i.start_time, i.start_time.isoformat())
             obj.append({'start': i.start_time.isoformat(), 'end': i.end_time.isoformat()})
 
     times=json.dumps(obj)
@@ -638,11 +635,9 @@ def gettimeslots():
     obj = []
     for i in host.timeslots:
         if datetime.datetime.now() < i.end_time:
-            print(i.start_time, i.start_time.isoformat())
             obj.append({'start': i.start_time.isoformat(), 'end': i.end_time.isoformat()})
 
     times=json.dumps(obj)
-    print(times)
     return times
 
     # return 'error'
@@ -721,7 +716,6 @@ def exchange_voice():
     response = VoiceResponse()
     try: 
         outgoing_number = _gather_outgoing_phone_number(form.From.data, form.To.data)
-        print(outgoing_number, "outgoing_number")
     except ValueError as e:
         response.say(str(e))
         return twiml(response)
@@ -745,7 +739,7 @@ def _gather_outgoing_phone_number(incoming_phone_number, anonymous_phone_number)
         if i.guest_phone_number == incoming_phone_number:
             conversation = i
 
-    print("guest number: ", conversation.guest_phone_number, anonymous_phone_number)
+    # print("guest number: ", conversation.guest_phone_number, anonymous_phone_number)
     # if conversation.guest_phone_number == incoming_phone_number:
     #     return conversation.discussion_profile.host.phone_number
 
