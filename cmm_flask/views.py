@@ -272,7 +272,7 @@ def register():
         if User.query.filter(User.phone_number == tel).count() > 0:
             return "Phone number already in use."
         if User.query.filter(User.user_id == user_id).count() > 0:
-            user = User.query.filter(User.user_id == form['user_id']).first()
+            user = User.query.filter(User.user_id == user_id).first()
             if User.query.filter(User.phone_number == tel).count() > 0:
                 return "Phone number already in use."
             user.phone_number = tel
@@ -363,9 +363,20 @@ def discussion_profile():
         is_users = False
         if dp.host.user_id == user_id:
             is_users = True
+        who, excites, helps, origin = '', '', '', ''
+        if dp.who:
+            who = dp.who
+            print("who", who)
+        if dp.excites:
+            excites = dp.excites
+        if dp.origin:
+            origin = dp.origin
+        if dp.helps:
+            helps = dp.helps
         profile={'host': dp.host.user_id, 'image': dp.image_url, 'description': dp.description,
             'anonymous_phone_number': dp.anonymous_phone_number, 'auth_pic': dp.host.auth_pic, 'first_name':dp.host.first_name, 
-            'last_name':dp.host.last_name, 'is_users': is_users, 'price': dp.price, 'otherProfile': dp.otherProfile,
+            'last_name':dp.host.last_name, 'is_users': is_users, 'price': dp.price, 'otherProfile': dp.otherProfile, 'who': who,
+            'origin': dp.origin, 'excites': dp.excites, 'helps': dp.helps
         }
         reviews = []
         ratings = []
@@ -407,13 +418,13 @@ def new_discussion():
             user_id = "nope"
         host = User.query.filter(User.user_id == user_id).one()
         discussion = DiscussionProfile(
-            description = form['description'], 
-            image_url = form['image_url'], 
+            # description = form['description'], 
+            # image_url = form['image_url'], 
             host = host,
             otherProfile = form['otherProfile'],
-            price = float(form['price']),
-            timezone = form['timezone'],
-            who = form['who']
+            # price = float(form['price']),
+            # timezone = form['timezone'],
+            # who = form['who']
         ) #need to push an anon phone # here.
         # discussion.anonymous_phone_number = discussion.buy_number().phone_number
         if 'email' in form:
@@ -492,6 +503,7 @@ def edit_discussion():
         who, excites, helps, origin = '', '', '', ''
         if dp.who:
             who = dp.who
+            print("who", who)
         if dp.excites:
             excites = dp.excites
         if dp.origin:

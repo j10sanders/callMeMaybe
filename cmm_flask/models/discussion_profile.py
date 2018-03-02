@@ -9,28 +9,28 @@ class DiscussionProfile(db.Model):
     __tablename__ = "discussion_profiles"
 
     id = db.Column(db.Integer, primary_key=True)
-    description = db.Column(db.String, nullable=False)
-    image_url = db.Column(db.String, nullable=False)
+    description = db.Column(db.String, nullable=True)
+    image_url = db.Column(db.String, nullable=True)
     otherProfile = db.Column(db.String, nullable=True)
-    price = db.Column(db.Float, nullable=False)
+    price = db.Column(db.Float, nullable=True)
     host_id = db.Column(db.Integer, db.ForeignKey('users.id'))
     host = db.relationship("User", back_populates="discussion_profiles")
     conversations = db.relationship("Conversation", back_populates="discussion_profile", passive_deletes=True)
     anonymous_phone_number = db.Column(db.String, nullable=True)
-    timezone = db.Column(db.String, server_default='America/New_York', nullable=False)
+    timezone = db.Column(db.String, server_default='America/New_York', nullable=True)
     who = db.Column(db.String, nullable=True)
     origin = db.Column(db.String, nullable=True)
     excites = db.Column(db.String, nullable=True)
     helps = db.Column(db.String, nullable=True)
 
-    def __init__(self, description, image_url, host, otherProfile, price, timezone, who):
-        self.description = description
-        self.image_url = image_url
+    def __init__(self, host, otherProfile):
+        # self.description = description
+        # self.image_url = image_url
         self.host = host
         self.otherProfile = otherProfile
-        self.price = price
-        self.timezone = timezone
-        self.who = who
+        # self.price = price
+        # self.timezone = timezone
+        # self.who = who
 
     def __repr__(self):
         return '<DiscussionProfile {0} {1}>'.format(self.id, self.description)
