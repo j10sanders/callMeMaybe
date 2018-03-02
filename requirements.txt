@@ -33,6 +33,7 @@ psycopg2==2.7.3.2
 pycparser==2.14
 PyJWT==1.5.3
 pyOpenSSL==17.5.0
+python-dateutil==2.6.1
 python-dotenv==0.7.1
 python-editor==0.5
 python-jose==1.4.0
