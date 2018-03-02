@@ -503,7 +503,6 @@ def edit_discussion():
         who, excites, helps, origin = '', '', '', ''
         if dp.who:
             who = dp.who
-            print("who", who)
         if dp.excites:
             excites = dp.excites
         if dp.origin:
