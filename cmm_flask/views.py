@@ -374,7 +374,7 @@ def discussion_profile():
             helps = dp.helps
         profile={'host': dp.host.user_id, 'image': dp.image_url, 'description': dp.description,
             'anonymous_phone_number': dp.anonymous_phone_number, 'auth_pic': dp.host.auth_pic, 'first_name':dp.host.first_name, 
-            'last_name':dp.host.last_name, 'is_users': is_users, 'price': dp.price, 'otherProfile': dp.otherProfile, 'who': who,
+            'last_name':dp.host.last_name, 'is_users': is_users, 'price': dp.price*1.185, 'otherProfile': dp.otherProfile, 'who': who,
             'origin': dp.origin, 'excites': dp.excites, 'helps': dp.helps
         }
         reviews = []
