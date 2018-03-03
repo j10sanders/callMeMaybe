@@ -14,9 +14,8 @@ class Conversation(db.Model):
 
     id = db.Column(db.Integer, primary_key=True)
     message = db.Column(db.String, nullable=False)
-    status = db.Column(db.Enum('pending', 'confirmed', 'rejected', name='conversation_status_enum'),
-                       default='pending')
-    
+    status = db.Column(db.Enum('confirmed', 'rejected', name='conversation_status_enum'),
+                       default='confirmed')
     guest_id = db.Column(db.Integer, db.ForeignKey('users.id'))
     discussion_profile_id = db.Column(db.Integer, db.ForeignKey('discussion_profiles.id', ondelete='CASCADE'))
     guest = db.relationship("User", back_populates="conversations")
@@ -30,7 +29,7 @@ class Conversation(db.Model):
         self.message = message
         self.guest_phone_number = guest_phone_number
         self.discussion_profile = discussion_profile
-        self.status = 'pending'
+        self.status = 'confirmed'
         self.start_time = start_time
         self.guest = guest
 
@@ -88,7 +87,7 @@ class Conversation(db.Model):
                            # render_template('messages/sms_guest.txt',
                            #                 description=self.discussion_profile.description,
                            #                 status=self.status))
-                          "Your call has been booked.")
+                          "Your call has been booked.  Make sure you don't miss it!")
         ### need error handling.  When this fails I should know, and it should be save to this conversation.
 
 

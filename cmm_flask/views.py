@@ -432,10 +432,10 @@ def new_discussion():
             db.session.add(discussion)
             db.session.commit()
 
-            adminUrl = 'http://localhost:5000/admin/user/edit/?id={}&url=%2Fadmin%2Fuser%2F'.format(host.id)
-            yag = yagmail.SMTP('pwreset.winthemini@gmail.com', GMAIL)
-            contents = [adminUrl]
-            yag.send(to = 'jonsandersss@gmail.com', subject='New Expert Request', contents=contents)
+            # adminUrl = 'http://localhost:5000/admin/user/edit/?id={}&url=%2Fadmin%2Fuser%2F'.format(host.id)
+            # yag = yagmail.SMTP('pwreset.winthemini@gmail.com', GMAIL)
+            # contents = [adminUrl]
+            # yag.send(to = 'jonsandersss@gmail.com', subject='New Expert Request', contents=contents)
             
             # content = 'Subject: New Expert Request!\n{} with message {}'.format(adminUrl, form['message'])
             # smtp_server = smtplib.SMTP('smtp.gmail.com', 587)
