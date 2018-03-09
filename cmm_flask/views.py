@@ -259,12 +259,13 @@ def get_user_id(t):
 @cross_origin(headers=["Content-Type", "Authorization"])
 @cross_origin(headers=["Access-Control-Allow-Origin", "*"])
 def register():
+    # pdb.set_trace()
     try:
         user_id = get_user_id(request.headers.get("Authorization", None))
     except AttributeError:
         user_id = "nope"
     form=request.get_json()
-    if request.method == 'POST':
+    if request.method != 'GET': #Options is sent locally, instead of post
         if "phone_number" in form:
             tel = form['phone_number'].replace('-', '')
         if 'user_id' in form:
