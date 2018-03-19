@@ -354,6 +354,9 @@ def discussion_profile():
     discussion_profile = None
     if discussion_id is not None:
         dp = DiscussionProfile.query.get(int(discussion_id))
+        pdb.set_trace()
+        if not dp:
+            return "does not exist"
         if not dp.host.expert:
             return "not an expert yet"
 
@@ -474,7 +477,6 @@ def deleted_discussion():
 @cross_origin(headers=["Access-Control-Allow-Origin", "*"])
 def edit_discussion():
     discussion_id = request.query_string[3:]
-    dp = DiscussionProfile.query.get(int(discussion_id))
     if request.method == 'POST':
         form=request.get_json()
         if dp.host.user_id == form['user_id']:
