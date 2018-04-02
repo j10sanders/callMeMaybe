@@ -259,7 +259,6 @@ def get_user_id(t):
 @cross_origin(headers=["Content-Type", "Authorization"])
 @cross_origin(headers=["Access-Control-Allow-Origin", "*"])
 def register():
-    # pdb.set_trace()
     try:
         user_id = get_user_id(request.headers.get("Authorization", None))
     except AttributeError:
@@ -354,7 +353,6 @@ def discussion_profile():
     discussion_profile = None
     if discussion_id is not None:
         dp = DiscussionProfile.query.get(int(discussion_id))
-        pdb.set_trace()
         if not dp:
             return "does not exist"
         if not dp.host.expert:
@@ -425,31 +423,31 @@ def new_discussion():
             # image_url = form['image_url'], 
             host = host,
             otherProfile = form['otherProfile'],
+            # email = form['email'],
             # price = float(form['price']),
             # timezone = form['timezone'],
             # who = form['who']
         ) #need to push an anon phone # here.
         # discussion.anonymous_phone_number = discussion.buy_number().phone_number
-        if 'email' in form:
-            host.requestExpert = True
-            host.messageforAdmins = form['message']
-            db.session.add(discussion)
-            db.session.commit()
+        host.requestExpert = True
+        host.email = form["email"]
+        host.messageforAdmins = form['message']
+        db.session.add(discussion)
+        db.session.commit()
 
-            # adminUrl = 'http://localhost:5000/admin/user/edit/?id={}&url=%2Fadmin%2Fuser%2F'.format(host.id)
-            # yag = yagmail.SMTP('pwreset.winthemini@gmail.com', GMAIL)
-            # contents = [adminUrl]
-            # yag.send(to = 'jonsandersss@gmail.com', subject='New Expert Request', contents=contents)
-            
-            # content = 'Subject: New Expert Request!\n{} with message {}'.format(adminUrl, form['message'])
-            # smtp_server = smtplib.SMTP('smtp.gmail.com', 587)
-            # smtp_server.ehlo()
-            # smtp_server.starttls()
-            # smtp_server.login('pwreset.winthemini@gmail.com', GMAIL)
-            # smtp_server.sendmail('pwreset.winthemini@gmail.com', 'jonsandersss@gmail.com', content)
-            # smtp_server.quit()
-            return 'success'
-        return "unknown"
+        # adminUrl = 'http://localhost:5000/admin/user/edit/?id={}&url=%2Fadmin%2Fuser%2F'.format(host.id)
+        # yag = yagmail.SMTP('pwreset.winthemini@gmail.com', GMAIL)
+        # contents = [adminUrl]
+        # yag.send(to = 'jonsandersss@gmail.com', subject='New Expert Request', contents=contents)
+        # content = 'Subject: New Expert Request!\n{} with message {}'.format(adminUrl, form['message'])
+        # smtp_server = smtplib.SMTP('smtp.gmail.com', 587)
+        # smtp_server.ehlo()
+        # smtp_server.starttls()
+        # smtp_server.login('pwreset.winthemini@gmail.com', GMAIL)
+        # smtp_server.sendmail('pwreset.winthemini@gmail.com', 'jonsandersss@gmail.com', content)
+        # smtp_server.quit()
+
+        return "success"
     return "error"
 
 

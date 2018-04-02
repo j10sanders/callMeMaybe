@@ -23,8 +23,9 @@ class User(db.Model):
     # reviewsLeft = db.relationship("Review", back_populates="guest")
     requestExpert = db.Column(db.Boolean, nullable=True, default=False)
     messageforAdmins = db.Column(db.String, nullable=True, default='')
+    email = db.Column(db.String, nullable=True)
 
-    def __init__(self, user_id="anonymous", area_code="000", phone_number="", first_name="anonymous", last_name="anonymous", auth_pic="", expert=False, requestExpert=False, messageforAdmins=''):
+    def __init__(self, user_id="anonymous", area_code="000", phone_number="", first_name="anonymous", last_name="anonymous", auth_pic="", expert=False, requestExpert=False, messageforAdmins='', email=""):
         self.first_name = first_name
         self.last_name = last_name
         self.user_id = user_id
@@ -35,6 +36,7 @@ class User(db.Model):
         self.auth_pic = auth_pic
         self.requestExpert = requestExpert
         self.messageforAdmins = messageforAdmins
+        self.email = email
 
     def is_authenticated(self):
         return True
