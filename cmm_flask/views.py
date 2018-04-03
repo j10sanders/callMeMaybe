@@ -313,8 +313,8 @@ def discussions():
     obj = []
     for ds in discussion_profiles:
         if ds.host.expert:
-            obj.append({'id':ds.id, 'first_name':ds.host.first_name, 'last_name':ds.host.last_name, 
-                'auth_pic': ds.host.auth_pic, 'image':ds.image_url, 'description': ds.description,
+            obj.append({'id': ds.id, 'url': ds.url, 'first_name': ds.host.first_name, 'last_name': ds.host.last_name, 
+                'auth_pic': ds.host.auth_pic, 'image': ds.image_url, 'description': ds.description,
                 })
     objs=json.dumps(obj)
     return objs
@@ -332,7 +332,7 @@ def mydiscussions():
     if len(dps) > 0:
         obj = []
         for ds in dps:
-            obj.append({'id':ds.id, 'first_name':ds.host.first_name, 'last_name':ds.host.last_name, 
+            obj.append({'id':ds.id, 'url': ds.url, 'first_name': ds.host.first_name, 'last_name': ds.host.last_name, 
                 'auth_pic': ds.host.auth_pic, 'image':ds.image_url, 'description': ds.description,
                 })
         objs=json.dumps(obj)
@@ -341,18 +341,20 @@ def mydiscussions():
         return "user has no discussion profiles"
     return "error"
 
-@app.route('/discussion', methods=["GET"])
-@app.route('/discussion/<discussion_id>', methods=["GET"])
+@app.route('/expert', methods=["GET"])
+@app.route('/expert/<url>', methods=["GET"])
 @cross_origin(headers=["Content-Type", "Authorization"])
-def discussion_profile(): 
+def discussion_profile(url): 
     try:
         user_id = get_user_id(request.headers.get("Authorization", None))
     except AttributeError:
         user_id = "nope"
-    discussion_id = request.query_string[3:] # ex) 'id=423'
+    pdb.set_trace()
     discussion_profile = None
-    if discussion_id is not None:
-        dp = DiscussionProfile.query.get(int(discussion_id))
+
+    if url is not None:
+        # dp = DiscussionProfile.query.get(int(discussion_id))
+        dp = db.session.query(DiscussionProfile).filter_by(url = url).one()
         if not dp:
             return "does not exist"
         if not dp.host.expert:
@@ -378,7 +380,7 @@ def discussion_profile():
         profile={'host': dp.host.user_id, 'image': dp.image_url, 'description': dp.description,
             'anonymous_phone_number': dp.anonymous_phone_number, 'auth_pic': dp.host.auth_pic, 'first_name':dp.host.first_name, 
             'last_name':dp.host.last_name, 'is_users': is_users, 'price': dp.price*1.185, 'otherProfile': dp.otherProfile, 'who': who,
-            'origin': dp.origin, 'excites': dp.excites, 'helps': dp.helps
+            'origin': dp.origin, 'excites': dp.excites, 'helps': dp.helps, 'url': dp.url
         }
         reviews = []
         ratings = []

@@ -9,6 +9,7 @@ class DiscussionProfile(db.Model):
     __tablename__ = "discussion_profiles"
 
     id = db.Column(db.Integer, primary_key=True)
+    url = db.Column(db.String)
     description = db.Column(db.String, nullable=True)
     image_url = db.Column(db.String, nullable=True)
     otherProfile = db.Column(db.String, nullable=True)
