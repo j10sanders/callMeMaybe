@@ -293,7 +293,7 @@ def register():
     if User.query.filter(User.user_id == user_id).count() > 0:
         user = User.query.filter(User.user_id == user_id).one()
         if len(user.discussion_profiles) > 0:
-            dpId = {'dp': user.discussion_profiles[0].id}
+            dpId = {'dp': user.discussion_profiles[0].id, 'url': user.discussion_profiles[0].url}
             return json.dumps(dpId)
         return "user previously registered."
     else: 
@@ -349,7 +349,6 @@ def discussion_profile(url):
         user_id = get_user_id(request.headers.get("Authorization", None))
     except AttributeError:
         user_id = "nope"
-    pdb.set_trace()
     discussion_profile = None
 
     if url is not None:
@@ -380,7 +379,7 @@ def discussion_profile(url):
         profile={'host': dp.host.user_id, 'image': dp.image_url, 'description': dp.description,
             'anonymous_phone_number': dp.anonymous_phone_number, 'auth_pic': dp.host.auth_pic, 'first_name':dp.host.first_name, 
             'last_name':dp.host.last_name, 'is_users': is_users, 'price': dp.price*1.185, 'otherProfile': dp.otherProfile, 'who': who,
-            'origin': dp.origin, 'excites': dp.excites, 'helps': dp.helps, 'url': dp.url
+            'origin': dp.origin, 'excites': dp.excites, 'helps': dp.helps, 'url': dp.url, 'id': dp.id
         }
         reviews = []
         ratings = []
@@ -470,14 +469,15 @@ def deleted_discussion():
             return "deleted"
     return "error"
 
-
-@app.route('/editdiscussion', methods=["GET", "POST"])
-@app.route('/editdiscussion/<discussion_id>', methods=["GET", "POST"])
+@app.route('/editProfile', methods=["GET", "POST"])
+@app.route('/editProfile/<dpid>', methods=["GET", "POST"])
 @cross_origin(headers=["Content-Type", "Authorization"])
 @cross_origin(headers=["Access-Control-Allow-Origin", "*"])
-def edit_discussion():
-    discussion_id = request.query_string[3:]
+def edit_discussion(dpid):
+    # pdb.set_trace()
+    discussion_id = dpid
     dp = DiscussionProfile.query.get(int(discussion_id))
+    # dp = db.session.query(DiscussionProfile).filter_by(url = url).one()
     if request.method == 'POST':
         form=request.get_json()
         if dp.host.user_id == form['user_id']:
@@ -490,6 +490,7 @@ def edit_discussion():
             dp.excites = form['excites'],
             dp.origin = form['origin'],
             dp.helps = form['helps'],
+            # dp.url=form['url'],
             db.session.commit()
             return 'success'
         else: 
