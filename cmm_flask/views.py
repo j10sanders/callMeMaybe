@@ -632,7 +632,6 @@ def submitreview():
 @cross_origin(headers=["Access-Control-Allow-Origin", "*"])
 @cross_origin(headers=["Content-Type", "Authorization"])
 @app.route('/api/getmytimeslots', methods=["GET"])
-# @app.route('/api/gettimeslots/<discussion_id>', methods=["GET", "POST"])
 def getmytimeslots():
     try:
         user_id = get_user_id(request.headers.get("Authorization", None))
@@ -650,21 +649,16 @@ def getmytimeslots():
 
 
 @cross_origin(headers=["Access-Control-Allow-Origin", "*"])
-@app.route('/api/gettimeslots/', methods=["GET"])
-# @app.route('/api/gettimeslots/<discussion_id>', methods=["GET", "POST"])
-def gettimeslots():
-    discussion_id = request.query_string[3:]
-    discussion_profile = DiscussionProfile.query.get(int(discussion_id))
+@app.route('/availability/<dp>', methods=["GET"])
+def gettimeslots(dp):
+    discussion_profile = DiscussionProfile.query.get(int(dp))
     host = discussion_profile.host
     obj = []
     for i in host.timeslots:
         if datetime.datetime.now() < i.end_time:
             obj.append({'start': i.start_time.isoformat(), 'end': i.end_time.isoformat()})
-
     times=json.dumps(obj)
     return times
-
-    # return 'error'
 
 # @app.route('/discussions/test_new', methods=["GET", "POST"])
 # def test_new_discussion():
@@ -684,7 +678,6 @@ def gettimeslots():
 @cross_origin(headers=["Access-Control-Allow-Origin", "*"])
 @cross_origin(headers=["Content-Type", "Authorization"])
 @app.route('/getprofile', methods=["GET"])
-# @app.route('/api/gettimeslots/<discussion_id>', methods=["GET", "POST"])
 def getprofile():
     try:
         user_id = get_user_id(request.headers.get("Authorization", None))
