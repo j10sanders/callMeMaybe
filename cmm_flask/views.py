@@ -32,6 +32,7 @@ from flask_admin.contrib.sqla import ModelView
 from flask.ext.login import login_user, logout_user, login_required
 from flask.ext.login import current_user
 from sqlalchemy.exc import IntegrityError
+from sqlalchemy import exists
 from flask_admin.contrib import sqla
 import yagmail
 import dateutil.parser
@@ -451,6 +452,23 @@ def new_discussion():
         return "success"
     return "error"
 
+@app.route('/url', methods=["GET"])
+@app.route('/urlcheck/<url>', methods=["GET"])
+@cross_origin(headers=["Content-Type", "Authorization"])
+@cross_origin(headers=["Access-Control-Allow-Origin", "*"])
+def url_check(url):
+    (ret, ), = db.session.query(exists().where(DiscussionProfile.url==url))
+    if ret:
+        try:
+            user_id = get_user_id(request.headers.get("Authorization", None))
+        except AttributeError:
+            return "not available"
+        host = User.query.filter(User.user_id == user_id).one()
+        if host.discussion_profiles[0].url == url:
+            return "available"
+        return "not available"
+    else:
+        return "available"
 
 @app.route('/deleteDiscussion', methods=["GET"])
 @app.route('/deleteDiscussion/<discussion_id>', methods=["GET"])
@@ -490,7 +508,7 @@ def edit_discussion(dpid):
             dp.excites = form['excites'],
             dp.origin = form['origin'],
             dp.helps = form['helps'],
-            # dp.url=form['url'],
+            dp.url = form['url'],
             db.session.commit()
             return 'success'
         else: 
@@ -513,9 +531,10 @@ def edit_discussion(dpid):
             origin = dp.origin
         if dp.helps:
             helps = dp.helps
+        if dp.url:
+            url = dp.url
         return jsonify({'description': dp.description, 'image_url': dp.image_url, 'price': dp.price, 'otherProfile': dp.otherProfile, 'timezone': dp.timezone,
-            'who': who, 'excites': excites, 'origin': origin, "helps": helps})
-
+            'who': who, 'excites': excites, 'origin': origin, "helps": helps, 'url': url})
     return "error"
 
 @cross_origin(headers=["Access-Control-Allow-Origin", "*"])
