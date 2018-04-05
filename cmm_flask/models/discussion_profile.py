@@ -1,8 +1,9 @@
 from cmm_flask.models import app_db, auth_token, account_sid, phone_number, application_sid
 from twilio.rest import Client
-import pdb
+from sqlalchemy import false
 
 db = app_db()
+
 
 
 class DiscussionProfile(db.Model):
@@ -23,6 +24,8 @@ class DiscussionProfile(db.Model):
     origin = db.Column(db.String, nullable=True)
     excites = db.Column(db.String, nullable=True)
     helps = db.Column(db.String, nullable=True)
+    public = db.Column(db.Boolean, nullable=False, server_default=false())
+    walletAddress = db.Column(db.String, nullable=True)
 
     def __init__(self, host, otherProfile):
         # self.description = description

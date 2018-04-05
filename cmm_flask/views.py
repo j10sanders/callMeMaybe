@@ -313,7 +313,7 @@ def discussions():
     discussion_profiles = DiscussionProfile.query.all()
     obj = []
     for ds in discussion_profiles:
-        if ds.host.expert:
+        if ds.public:
             obj.append({'id': ds.id, 'url': ds.url, 'first_name': ds.host.first_name, 'last_name': ds.host.last_name, 
                 'auth_pic': ds.host.auth_pic, 'image': ds.image_url, 'description': ds.description,
                 })
@@ -509,6 +509,7 @@ def edit_discussion(dpid):
             dp.origin = form['origin'],
             dp.helps = form['helps'],
             dp.url = form['url'],
+            dp.walletAddress = form['walletAddress']
             db.session.commit()
             return 'success'
         else: 
@@ -522,7 +523,7 @@ def edit_discussion(dpid):
         if dp.host.user_id != user_id:
             return "Not this user's"
 
-        who, excites, helps, origin = '', '', '', ''
+        who, excites, helps, origin, url, walletAddress = '', '', '', '', '', ''
         if dp.who:
             who = dp.who
         if dp.excites:
@@ -533,8 +534,10 @@ def edit_discussion(dpid):
             helps = dp.helps
         if dp.url:
             url = dp.url
+        if dp.walletAddress:
+            walletAddress = dp.walletAddress
         return jsonify({'description': dp.description, 'image_url': dp.image_url, 'price': dp.price, 'otherProfile': dp.otherProfile, 'timezone': dp.timezone,
-            'who': who, 'excites': excites, 'origin': origin, "helps": helps, 'url': url})
+            'who': who, 'excites': excites, 'origin': origin, "helps": helps, 'url': url, 'walletAddress': walletAddress})
     return "error"
 
 @cross_origin(headers=["Access-Control-Allow-Origin", "*"])
