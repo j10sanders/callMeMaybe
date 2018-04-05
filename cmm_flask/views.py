@@ -488,13 +488,14 @@ def deleted_discussion():
     return "error"
 
 @app.route('/editProfile', methods=["GET", "POST"])
-@app.route('/editProfile/<dpid>', methods=["GET", "POST"])
+@app.route('/editProfile/<url>', methods=["GET", "POST"])
 @cross_origin(headers=["Content-Type", "Authorization"])
 @cross_origin(headers=["Access-Control-Allow-Origin", "*"])
-def edit_discussion(dpid):
+def edit_discussion(url):
     # pdb.set_trace()
-    discussion_id = dpid
-    dp = DiscussionProfile.query.get(int(discussion_id))
+    # discussion_id = dpid
+    # dp = DiscussionProfile.query.get(int(discussion_id))
+    dp = db.session.query(DiscussionProfile).filter_by(url = url).one()
     # dp = db.session.query(DiscussionProfile).filter_by(url = url).one()
     if request.method == 'POST':
         form=request.get_json()
