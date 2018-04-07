@@ -543,30 +543,31 @@ def edit_discussion(url):
 
 @cross_origin(headers=["Access-Control-Allow-Origin", "*"])
 @cross_origin(headers=["Content-Type", "Authorization"])
-@app.route('/conversations', methods=["GET", "POST"])
-@app.route('/conversations/', methods=["POST"])
-@app.route('/conversations/<discussion_id>', methods=["GET", "POST"])
-def new_conversation():
+# @app.route('/conversations', methods=["GET", "POST"])
+# @app.route('/conversations/', methods=["POST"])
+@app.route('/conversations/<dpid>', methods=["GET", "POST"])
+def new_conversation(dpid):
     try:
         user_id = get_user_id(request.headers.get("Authorization", None))
         guest = User.query.filter(User.user_id == user_id).one()
     except AttributeError:
         guest = User.query.filter(User.user_id == 'Anonymous').one()
         user_id = None
-    discussion_id = request.query_string[3:] # ex) 'id=423'
+    # discussion_id = request.query_string[3:] # ex) 'id=423'
     discussion_profile = None
     form=request.get_json()
     #this is where I'll need truffle/Meta Mask.  May also need to send a verification text.
     if 'phone_number' in form:
         guest_phone_number = form['phone_number'].replace('-', '')
+        guest_email = form['email']
     
     if user_id is not None:
         if guest.phone_number != guest_phone_number:
             guest.phone_number = guest_phone_number
 
     time = form['start_time']
-    discussion_profile = DiscussionProfile.query.get(int(discussion_id))
-    conversation = Conversation(form['message'], discussion_profile, guest_phone_number=guest_phone_number, start_time=time, guest=guest)
+    discussion_profile = DiscussionProfile.query.get(int(dpid))
+    conversation = Conversation(form['message'], discussion_profile, guest_phone_number=guest_phone_number, start_time=time, guest=guest, guest_email=guest_email)
     host = discussion_profile.host
     newdate = dateutil.parser.parse(time)
     naive = newdate.replace(tzinfo=None)
@@ -769,7 +770,7 @@ def _gather_outgoing_phone_number(incoming_phone_number, anonymous_phone_number)
     if difference > 30:
         raise ValueError("Sorry, you needed to call within the 30 minute timeslot you booked.  It has been {} minutes since the start of your timeslot.".format(str(round(difference,1))))
     else:
-        if difference < -1:
+        if difference < -3:
             raise ValueError("The timeslot you booked doesn't start for {} minutes".format(str(round(difference,1))))
         elif conversation.guest_phone_number == incoming_phone_number:
             return conversation.discussion_profile.host.phone_number

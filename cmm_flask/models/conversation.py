@@ -20,18 +20,20 @@ class Conversation(db.Model):
     discussion_profile_id = db.Column(db.Integer, db.ForeignKey('discussion_profiles.id', ondelete='CASCADE'))
     guest = db.relationship("User", back_populates="conversations")
     guest_phone_number = db.Column(db.String)
+    guest_email = db.Column(db.String)
     discussion_profile = db.relationship("DiscussionProfile", back_populates="conversations")
     start_time = db.Column(db.DateTime, server_default=func.now(), nullable=False )
     reviewed = db.Column(db.Boolean, nullable=True, default=False)
     unsubscribed = db.Column(db.Boolean, nullable=True, default=False)
 
-    def __init__(self, message='', discussion_profile='', guest_phone_number='', start_time=datetime.datetime.now(), guest=''):
+    def __init__(self, message='', discussion_profile='', guest_phone_number='', start_time=datetime.datetime.now(), guest='', guest_email=''):
         self.message = message
         self.guest_phone_number = guest_phone_number
         self.discussion_profile = discussion_profile
         self.status = 'confirmed'
         self.start_time = start_time
         self.guest = guest
+        self.guest_email = guest_email
 
     def confirm(self):
         self.status = 'confirmed'
