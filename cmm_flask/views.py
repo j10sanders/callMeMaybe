@@ -543,8 +543,6 @@ def edit_discussion(url):
 
 @cross_origin(headers=["Access-Control-Allow-Origin", "*"])
 @cross_origin(headers=["Content-Type", "Authorization"])
-# @app.route('/conversations', methods=["GET", "POST"])
-# @app.route('/conversations/', methods=["POST"])
 @app.route('/conversations/<dpid>', methods=["GET", "POST"])
 def new_conversation(dpid):
     try:
@@ -553,7 +551,6 @@ def new_conversation(dpid):
     except AttributeError:
         guest = User.query.filter(User.user_id == 'Anonymous').one()
         user_id = None
-    # discussion_id = request.query_string[3:] # ex) 'id=423'
     discussion_profile = None
     form=request.get_json()
     #this is where I'll need truffle/Meta Mask.  May also need to send a verification text.
@@ -743,10 +740,20 @@ def exchange_voice():
         return twiml(response)
     if outgoing_number:
         dial = Dial(caller_id = form.To.data) # the number the person calls is the same as the reciever sees.
-        dial.number(outgoing_number)
+        dial.number(outgoing_number, status_callback='http://3d1f4291.ngrok.io/status_callback')
         response.append(dial)
 
     return twiml(response)
+
+@app.route('/status_callback', methods=["POST"])
+def status_callback():
+    # print(request.values)
+    r = request.values
+    CallerSid = r.get('CallerSid')
+    CallDuration = r.get('CallDuration')
+    CallStatus = r.get('CallStatus')
+    print('SID: {}, Duration: {}, Status: {}'.format(CallerSid, CallDuration, CallStatus))
+    return
 
 
 def _gather_outgoing_phone_number(incoming_phone_number, anonymous_phone_number):
@@ -764,7 +771,7 @@ def _gather_outgoing_phone_number(incoming_phone_number, anonymous_phone_number)
     # print("guest number: ", conversation.guest_phone_number, anonymous_phone_number)
     # if conversation.guest_phone_number == incoming_phone_number:
     #     return conversation.discussion_profile.host.phone_number
-
+    # prb.set_trace()
     difference = (datetime.datetime.utcnow() - conversation.start_time).total_seconds() / 60
     # print(datetime.datetime.now(), conversation.start_time, conversation.discussion_profile, conversation.message)
     if difference > 30:
