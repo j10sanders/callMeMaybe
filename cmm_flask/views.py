@@ -36,6 +36,7 @@ from sqlalchemy import exists
 from flask_admin.contrib import sqla
 import yagmail
 import dateutil.parser
+import requests
 
 ENV_FILE = find_dotenv()
 if ENV_FILE:
@@ -43,6 +44,7 @@ if ENV_FILE:
 GMAIL = env.get("GMAIL")
 AUTH0_DOMAIN = env.get("AUTH0_DOMAIN")
 AUTH0_AUDIENCE = env.get("AUTH0_AUDIENCE")
+MAILGUN_API_KEY = env.get("MAILGUN_API_KEY")
 ALGORITHMS = ["RS256"]
 
 class MyView(sqla.ModelView):
@@ -323,7 +325,7 @@ def discussions():
 
 @app.route('/api/mydiscussions', methods=["GET"])
 @cross_origin(headers=["Content-Type", "Authorization"])
-def mydiscussions(): 
+def mydiscussions():
     try:
         user_id = get_user_id(request.headers.get("Authorization", None))
     except AttributeError:
@@ -512,6 +514,14 @@ def edit_discussion(url):
             dp.url = form['url'],
             dp.walletAddress = form['walletAddress']
             db.session.commit()
+            resp = requests.post(
+                "https://api.mailgun.net/v3/dimpull.com/messages",
+                auth=("api", MAILGUN_API_KEY),
+                data={"from": "Jon jon@dimpull.com",
+                      "to": ["jonsandersss@gmail.com", "jonsandersss@gmail.com"],
+                      "subject": "Someone edited their profile",
+                      "text": url})
+            print(resp.text, resp.status_code, resp.headers.items())
             return 'success'
         else: 
             return "wrong user"
