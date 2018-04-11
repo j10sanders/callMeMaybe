@@ -290,6 +290,13 @@ def register():
                 phone_number=tel,
                 area_code=tel[2:5],
             )
+        resp = requests.post(
+            "https://api.mailgun.net/v3/dimpull.com/messages",
+            auth=("api", MAILGUN_API_KEY),
+            data={"from": "Jon jon@dimpull.com",
+                  "to": ["jonsandersss@gmail.com", "jonsandersss@gmail.com"],
+                  "subject": "Someone registered",
+                  "text": form['first_name'] + " " + form['last_name']})
         db.session.add(user)
         db.session.commit()
         return "done"
@@ -521,7 +528,6 @@ def edit_discussion(url):
                       "to": ["jonsandersss@gmail.com", "jonsandersss@gmail.com"],
                       "subject": "Someone edited their profile",
                       "text": url})
-            print(resp.text, resp.status_code, resp.headers.items())
             return 'success'
         else: 
             return "wrong user"
