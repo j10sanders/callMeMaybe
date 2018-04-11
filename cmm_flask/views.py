@@ -45,6 +45,7 @@ GMAIL = env.get("GMAIL")
 AUTH0_DOMAIN = env.get("AUTH0_DOMAIN")
 AUTH0_AUDIENCE = env.get("AUTH0_AUDIENCE")
 MAILGUN_API_KEY = env.get("MAILGUN_API_KEY")
+OCTOPUS_KEY=env.get("OCTOPUS_KEY")
 ALGORITHMS = ["RS256"]
 
 class MyView(sqla.ModelView):
@@ -664,6 +665,15 @@ def getmytimeslots():
 
     times=json.dumps(obj)
     return times
+
+@cross_origin(headers=["Access-Control-Allow-Origin", "*"])
+@app.route('/addemail', methods=["POST"])
+def addemail():
+    form=request.get_json()
+    payload ={'api_key': OCTOPUS_KEY, 'email_address': form['email'], 'subscribed': True}
+    r = requests.post("https://emailoctopus.com/api/1.3/lists/6543ad73-3cfa-11e8-a3c9-06b79b628af2/contacts", 
+       data={'api_key': OCTOPUS_KEY, 'email_address': form['email'], 'subscribed': True})
+    return "submitted"
 
 
 @cross_origin(headers=["Access-Control-Allow-Origin", "*"])
