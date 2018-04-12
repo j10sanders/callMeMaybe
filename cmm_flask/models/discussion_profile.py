@@ -26,6 +26,10 @@ class DiscussionProfile(db.Model):
     helps = db.Column(db.String, nullable=True)
     public = db.Column(db.Boolean, nullable=False, server_default=false())
     walletAddress = db.Column(db.String, nullable=True)
+    medium = db.Column(db.String, nullable=True)
+    twitter = db.Column(db.String, nullable=True)
+    linkedin = db.Column(db.String, nullable=True)
+    github = db.Column(db.String, nullable=True)
 
     def __init__(self, host, otherProfile):
         # self.description = description

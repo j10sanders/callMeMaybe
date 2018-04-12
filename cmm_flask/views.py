@@ -378,7 +378,7 @@ def discussion_profile(url):
             is_users = True
             if not dp.price:
                 return 'editProfile'
-        who, excites, helps, origin = '', '', '', ''
+        who, excites, helps, origin, linkedin, medium, github, twitter = '', '', '', '', '', '', '', ''
         if dp.who:
             who = dp.who
         if dp.excites:
@@ -387,10 +387,19 @@ def discussion_profile(url):
             origin = dp.origin
         if dp.helps:
             helps = dp.helps
+        if dp.twitter:
+            twitter = dp.twitter
+        if dp.linkedin:
+            linkedin = dp.linkedin
+        if dp.github:
+            github = dp.github
+        if dp.medium:
+            medium = dp.medium  
         profile={'host': dp.host.user_id, 'image': dp.image_url, 'description': dp.description,
             'anonymous_phone_number': dp.anonymous_phone_number, 'auth_pic': dp.host.auth_pic, 'first_name':dp.host.first_name, 
             'last_name':dp.host.last_name, 'is_users': is_users, 'price': dp.price*1.185, 'otherProfile': dp.otherProfile, 'who': who,
-            'origin': dp.origin, 'excites': dp.excites, 'helps': dp.helps, 'url': dp.url, 'id': dp.id
+            'origin': dp.origin, 'excites': dp.excites, 'helps': dp.helps, 'url': dp.url, 'id': dp.id, 'linkedin': linkedin,
+            'github': github, 'medium': medium, 'twitter': twitter
         }
         reviews = []
         ratings = []
@@ -512,7 +521,7 @@ def edit_discussion(url):
         if dp.host.user_id == form['user_id']:
             dp.description = form['description'], 
             dp.image_url = form['image_url'], 
-            dp.otherProfile = form['otherProfile'],
+            # dp.otherProfile = form['otherProfile'],
             dp.price = float(form['price']),
             dp.timezone = form['timezone'],
             dp.who = form['who'],
@@ -521,6 +530,10 @@ def edit_discussion(url):
             dp.helps = form['helps'],
             dp.url = form['url'],
             dp.walletAddress = form['walletAddress']
+            dp.linkedin = form['linkedin']
+            dp.medium = form['medium']
+            dp.twitter = form['twitter']
+            dp.github = form['github']
             db.session.commit()
             resp = requests.post(
                 "https://api.mailgun.net/v3/dimpull.com/messages",
@@ -541,7 +554,7 @@ def edit_discussion(url):
         if dp.host.user_id != user_id:
             return "Not this user's"
 
-        who, excites, helps, origin, url, walletAddress = '', '', '', '', '', ''
+        who, excites, helps, origin, url, walletAddress, linkedin, medium, twitter, github = '', '', '', '', '', '', '', '', '', ''
         if dp.who:
             who = dp.who
         if dp.excites:
@@ -554,8 +567,17 @@ def edit_discussion(url):
             url = dp.url
         if dp.walletAddress:
             walletAddress = dp.walletAddress
-        return jsonify({'description': dp.description, 'image_url': dp.image_url, 'price': dp.price, 'otherProfile': dp.otherProfile, 'timezone': dp.timezone,
-            'who': who, 'excites': excites, 'origin': origin, "helps": helps, 'url': url, 'walletAddress': walletAddress})
+        if dp.twitter:
+            twitter = dp.twitter
+        if dp.linkedin:
+            linkedin = dp.linkedin
+        if dp.github:
+            github = dp.github
+        if dp.medium:
+            medium = dp.medium 
+        return jsonify({'description': dp.description, 'image_url': dp.image_url, 'price': dp.price, 'otherProfile': dp.otherProfile, 
+            'timezone': dp.timezone, 'who': who, 'excites': excites, 'origin': origin, "helps": helps, 'url': url,
+            'walletAddress': walletAddress, 'github': github, 'linkedin': linkedin, 'medium': medium, 'twitter': twitter})
     return "error"
 
 @cross_origin(headers=["Access-Control-Allow-Origin", "*"])
