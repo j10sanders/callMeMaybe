@@ -577,7 +577,8 @@ def edit_discussion(url):
             medium = dp.medium 
         return jsonify({'description': dp.description, 'image_url': dp.image_url, 'price': dp.price, 'otherProfile': dp.otherProfile, 
             'timezone': dp.timezone, 'who': who, 'excites': excites, 'origin': origin, "helps": helps, 'url': url,
-            'walletAddress': walletAddress, 'github': github, 'linkedin': linkedin, 'medium': medium, 'twitter': twitter})
+            'walletAddress': walletAddress, 'github': github, 'linkedin': linkedin, 'medium': medium, 'twitter': twitter,
+            'first_name': dp.host.first_name, 'last_name': dp.host.last_name})
     return "error"
 
 @cross_origin(headers=["Access-Control-Allow-Origin", "*"])
