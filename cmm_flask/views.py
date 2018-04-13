@@ -492,12 +492,12 @@ def url_check(url):
 @app.route('/deleteDiscussion', methods=["GET"])
 @app.route('/deleteDiscussion/<discussion_id>', methods=["GET"])
 @cross_origin(headers=["Content-Type", "Authorization"])
-def deleted_discussion(): 
+def deleted_discussion(discussion_id): 
     try:
         user_id = get_user_id(request.headers.get("Authorization", None))
     except AttributeError:
         user_id = "nope"
-    discussion_id = request.query_string[3:] # ex) 'id=423'
+    # discussion_id = request.query_string[3:] # ex) 'id=423'
     if discussion_id is not None:
         dp = DiscussionProfile.query.get(int(discussion_id))
         if dp.host.user_id == user_id:
