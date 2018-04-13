@@ -37,6 +37,8 @@ from flask_admin.contrib import sqla
 import yagmail
 import dateutil.parser
 import requests
+from sqlalchemy import exc
+
 
 ENV_FILE = find_dotenv()
 if ENV_FILE:
@@ -361,10 +363,12 @@ def discussion_profile(url):
     except AttributeError:
         user_id = "nope"
     discussion_profile = None
-
     if url is not None:
         # dp = DiscussionProfile.query.get(int(discussion_id))
-        dp = db.session.query(DiscussionProfile).filter_by(url = url).one()
+        try:
+            dp = db.session.query(DiscussionProfile).filter_by(url = url).one()
+        except exc.SQLAlchemyError:
+            return "404"
         if not dp:
             return "does not exist"
         if not dp.host.expert:
