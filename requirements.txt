@@ -47,5 +47,4 @@ unittest2==1.1.0
 urllib3==1.22
 Werkzeug==0.11.3
 WTForms==2.1
-yagmail==0.10.212
 

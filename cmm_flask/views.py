@@ -34,7 +34,6 @@ from flask.ext.login import current_user
 from sqlalchemy.exc import IntegrityError
 from sqlalchemy import exists
 from flask_admin.contrib import sqla
-import yagmail
 import dateutil.parser
 import requests
 from sqlalchemy import exc
@@ -312,6 +311,18 @@ def register():
     else: 
         return "register phone"
 
+@app.route('/senderror', methods=["POST"])
+def senderror():
+    resp = requests.post(
+            "https://api.mailgun.net/v3/dimpull.com/messages",
+            auth=("api", MAILGUN_API_KEY),
+            data={"from": "Jon jon@dimpull.com",
+                  "to": ["jonsandersss@gmail.com", "jonsandersss@gmail.com"],
+                  "subject": "Someone had an error making a profile",
+                  "text": form['err'] + " " + form['email']})
+    return
+
+
 @app.route('/expertrequest', methods=["GET, POST"])
 @cross_origin(headers=["Content-Type", "Authorization"])
 @cross_origin(headers=["Access-Control-Allow-Origin", "*"])
@@ -443,37 +454,32 @@ def new_discussion():
         except AttributeError:
             user_id = "nope"
         host = User.query.filter(User.user_id == user_id).one()
+        url = _make_url(host)
         discussion = DiscussionProfile(
-            # description = form['description'], 
-            # image_url = form['image_url'], 
             host = host,
             otherProfile = form['otherProfile'],
-            # email = form['email'],
-            # price = float(form['price']),
-            # timezone = form['timezone'],
-            # who = form['who']
-        ) #need to push an anon phone # here.
-        # discussion.anonymous_phone_number = discussion.buy_number().phone_number
+        )
+        discussion.url = url
         host.requestExpert = True
         host.email = form["email"]
         host.messageforAdmins = form['message']
+
         db.session.add(discussion)
         db.session.commit()
 
-        # adminUrl = 'http://localhost:5000/admin/user/edit/?id={}&url=%2Fadmin%2Fuser%2F'.format(host.id)
-        # yag = yagmail.SMTP('pwreset.winthemini@gmail.com', GMAIL)
-        # contents = [adminUrl]
-        # yag.send(to = 'jonsandersss@gmail.com', subject='New Expert Request', contents=contents)
-        # content = 'Subject: New Expert Request!\n{} with message {}'.format(adminUrl, form['message'])
-        # smtp_server = smtplib.SMTP('smtp.gmail.com', 587)
-        # smtp_server.ehlo()
-        # smtp_server.starttls()
-        # smtp_server.login('pwreset.winthemini@gmail.com', GMAIL)
-        # smtp_server.sendmail('pwreset.winthemini@gmail.com', 'jonsandersss@gmail.com', content)
-        # smtp_server.quit()
-
-        return "success"
+        return url
     return "error"
+
+def _make_url(host):
+    name = host.first_name.lower() + '-' + host.last_name.lower()
+    for x in range(0, 100):
+        if x == 0:
+            newName = name
+        else: 
+            newName = name + str(x)
+        (ret, ), = db.session.query(exists().where(DiscussionProfile.url==newName))
+        if not ret:
+            return newName
 
 @app.route('/url', methods=["GET"])
 @app.route('/urlcheck/<url>', methods=["GET"])
@@ -515,11 +521,7 @@ def deleted_discussion(discussion_id):
 @cross_origin(headers=["Content-Type", "Authorization"])
 @cross_origin(headers=["Access-Control-Allow-Origin", "*"])
 def edit_discussion(url):
-    # pdb.set_trace()
-    # discussion_id = dpid
-    # dp = DiscussionProfile.query.get(int(discussion_id))
     dp = db.session.query(DiscussionProfile).filter_by(url = url).one()
-    # dp = db.session.query(DiscussionProfile).filter_by(url = url).one()
     if request.method == 'POST':
         form=request.get_json()
         if dp.host.user_id == form['user_id']:
