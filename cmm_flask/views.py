@@ -521,7 +521,10 @@ def deleted_discussion(discussion_id):
 @cross_origin(headers=["Content-Type", "Authorization"])
 @cross_origin(headers=["Access-Control-Allow-Origin", "*"])
 def edit_discussion(url):
-    dp = db.session.query(DiscussionProfile).filter_by(url = url).one()
+    try:
+        dp = db.session.query(DiscussionProfile).filter_by(url = url).one()
+    except exc.SQLAlchemyError:
+        return '404'
     if request.method == 'POST':
         form=request.get_json()
         if dp.host.user_id == form['user_id']:
