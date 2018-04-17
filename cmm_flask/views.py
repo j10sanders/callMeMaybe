@@ -383,6 +383,7 @@ def mydiscussions():
 @app.route('/expert/<url>', methods=["GET"])
 @cross_origin(headers=["Content-Type", "Authorization"])
 def discussion_profile(url): 
+    url = url.lower()
     try:
         user_id = get_user_id(request.headers.get("Authorization", None))
     except AttributeError:
@@ -505,6 +506,7 @@ def _make_url(host):
 @cross_origin(headers=["Content-Type", "Authorization"])
 @cross_origin(headers=["Access-Control-Allow-Origin", "*"])
 def url_check(url):
+    url = url.lower()
     (ret, ), = db.session.query(exists().where(DiscussionProfile.url==url))
     if ret:
         try:
@@ -556,7 +558,7 @@ def edit_discussion(url):
             dp.excites = form['excites'],
             dp.origin = form['origin'],
             dp.helps = form['helps'],
-            dp.url = form['url'],
+            dp.url = form['url'].lower(),
             dp.walletAddress = form['walletAddress']
             dp.linkedin = form['linkedin']
             dp.medium = form['medium']
