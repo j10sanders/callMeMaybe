@@ -8,7 +8,7 @@ from cmm_flask.forms import RegisterForm, LoginForm, DiscussionProfileForm, Conv
     ConversationConfirmationForm, ExchangeForm
 from cmm_flask.view_helpers import twiml, view, redirect_to, view_with_params
 from cmm_flask.models import init_models_module
-import json
+import json, random, string
 from flask.views import MethodView
 from functools import wraps
 from os import environ as env
@@ -19,6 +19,8 @@ from dotenv import load_dotenv, find_dotenv
 init_models_module(db, bcrypt, app)
 from cmm_flask.models.user import User
 from cmm_flask.models.discussion_profile import DiscussionProfile
+from cmm_flask.models.referral import Referral
+from cmm_flask.models.referents import Referent
 from cmm_flask.models.conversation import Conversation
 from cmm_flask.models.timeslot import TimeSlot
 from cmm_flask.models.reviews import Review
@@ -58,6 +60,14 @@ class MyView(sqla.ModelView):
         return redirect(url_for('login_get', next=request.url))
         redirect(request.args.get('next') or url_for("admin.index"))
 
+class MyRefView(sqla.ModelView):
+    form_columns = ['host_id', 'host', 'referents', 'code']
+    def is_accessible(self):
+        return current_user.is_authenticated
+
+    def inaccessible_callback(self, name, **kwargs):
+        return redirect(url_for('login_get', next=request.url))
+        redirect(request.args.get('next') or url_for("admin.index"))
 
 @app.route("/login", methods=["GET"])
 def login_get():
@@ -104,6 +114,8 @@ admin.add_view(MyView(DiscussionProfile, db.session))
 admin.add_view(MyView(Conversation, db.session))
 admin.add_view(MyView(TimeSlot, db.session))
 admin.add_view(MyView(Review, db.session))
+admin.add_view(MyRefView(Referral, db.session))
+admin.add_view(MyView(Referent, db.session))
 
 
 ###
@@ -264,6 +276,8 @@ def get_user_id(t):
 @cross_origin(headers=["Content-Type", "Authorization"])
 @cross_origin(headers=["Access-Control-Allow-Origin", "*"])
 def register():
+    pdb.set_trace()
+
     try:
         user_id = get_user_id(request.headers.get("Authorization", None))
     except AttributeError:
@@ -463,10 +477,15 @@ def new_discussion():
         host.requestExpert = True
         host.email = form["email"]
         host.messageforAdmins = form['message']
-
+        refs = host.referrals
+        if len(host.referrals) < 1:
+            referral = Referral(
+                host = host,
+                code = ''.join(random.choices(string.ascii_letters + string.digits, k=7))
+            )
+            db.session.add(referral)
         db.session.add(discussion)
         db.session.commit()
-
         return url
     return "error"
 

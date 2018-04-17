@@ -4,8 +4,6 @@ from sqlalchemy import false
 
 db = app_db()
 
-
-
 class DiscussionProfile(db.Model):
     __tablename__ = "discussion_profiles"
 
