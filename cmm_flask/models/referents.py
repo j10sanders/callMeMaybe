@@ -14,7 +14,3 @@ class Referent(db.Model):
     referent = db.relationship("User", back_populates="referents")
     referral = db.relationship("Referral", back_populates="referents")
     start_time = db.Column(db.DateTime)
-
-    def __init__(self, discussion_profile='', referent=''):
-        self.referral = referral
-        self.referent = referent

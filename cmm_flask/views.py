@@ -276,8 +276,6 @@ def get_user_id(t):
 @cross_origin(headers=["Content-Type", "Authorization"])
 @cross_origin(headers=["Access-Control-Allow-Origin", "*"])
 def register():
-    pdb.set_trace()
-
     try:
         user_id = get_user_id(request.headers.get("Authorization", None))
     except AttributeError:
@@ -777,6 +775,8 @@ def getprofile():
 @cross_origin(headers=["Content-Type", "Authorization"])
 @app.route('/addReferent/<code>', methods=["GET"])
 def add_ref(code):
+    # This code is a bit weird because addReferent is called before the user is registered (so it just checks if code is valid)
+    # And again when the user is registered, so it applys the code/adds the referent row
     try:
         user_id = get_user_id(request.headers.get("Authorization", None))
     except AttributeError:
@@ -784,11 +784,21 @@ def add_ref(code):
         return "not authenticated"
     try: 
         user = User.query.filter(User.user_id == user_id).one()
+        try:
+            referral = Referral.query.filter(Referral.code == code).one()
+            referent = Referent(referent=user, referral=referral)
+            db.session.add(referent)
+            db.session.commit()
+            return "applied"
+        except:
+            return "not accepted"
     except:
-        return "not authenticated"
-    if user:
-        return json.dumps({'user_id': user.user_id, 'phone_number': user.phone_number, 'expert': user.expert})
-    return
+        try:
+            referral = Referral.query.filter(Referral.code == code).one()
+        except:
+            return "referral code doesn't exist"
+        return "referral code accepted"
+    return "not accepted"
 
 
 @app.route('/conversations/confirm', methods=["POST"])
@@ -867,7 +877,6 @@ def _gather_outgoing_phone_number(incoming_phone_number, anonymous_phone_number)
     # print("guest number: ", conversation.guest_phone_number, anonymous_phone_number)
     # if conversation.guest_phone_number == incoming_phone_number:
     #     return conversation.discussion_profile.host.phone_number
-    # prb.set_trace()
     difference = (datetime.datetime.utcnow() - conversation.start_time).total_seconds() / 60
     # print(datetime.datetime.now(), conversation.start_time, conversation.discussion_profile, conversation.message)
     if difference > 30:
