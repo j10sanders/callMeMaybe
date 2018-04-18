@@ -773,6 +773,23 @@ def getprofile():
         return json.dumps({'user_id': user.user_id, 'phone_number': user.phone_number, 'expert': user.expert})
     return
 
+@cross_origin(headers=["Access-Control-Allow-Origin", "*"])
+@cross_origin(headers=["Content-Type", "Authorization"])
+@app.route('/addReferent/<code>', methods=["GET"])
+def add_ref(code):
+    try:
+        user_id = get_user_id(request.headers.get("Authorization", None))
+    except AttributeError:
+        user_id = "nope"
+        return "not authenticated"
+    try: 
+        user = User.query.filter(User.user_id == user_id).one()
+    except:
+        return "not authenticated"
+    if user:
+        return json.dumps({'user_id': user.user_id, 'phone_number': user.phone_number, 'expert': user.expert})
+    return
+
 
 @app.route('/conversations/confirm', methods=["POST"])
 def confirm_conversation():
