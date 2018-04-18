@@ -325,6 +325,7 @@ def register():
 
 @app.route('/senderror', methods=["POST"])
 def senderror():
+    form=request.get_json()
     resp = requests.post(
             "https://api.mailgun.net/v3/dimpull.com/messages",
             auth=("api", MAILGUN_API_KEY),
@@ -539,11 +540,12 @@ def deleted_discussion(discussion_id):
 @app.route('/editProfile/<url>', methods=["GET", "POST"])
 @cross_origin(headers=["Content-Type", "Authorization"])
 @cross_origin(headers=["Access-Control-Allow-Origin", "*"])
-def edit_discussion(url):
-    try:
-        dp = db.session.query(DiscussionProfile).filter_by(url = url).one()
-    except exc.SQLAlchemyError:
-        return '404'
+def edit_discussion(url=None):
+    if url:
+        try:
+            dp = db.session.query(DiscussionProfile).filter_by(url = url).one()
+        except exc.SQLAlchemyError:
+            return '404'
     if request.method == 'POST':
         form=request.get_json()
         if dp.host.user_id == form['user_id']:
@@ -579,6 +581,16 @@ def edit_discussion(url):
             user_id = get_user_id(request.headers.get("Authorization", None))
         except AttributeError:
             user_id = "nope"
+
+        if not url: # Just /editProfile
+            if User.query.filter(User.user_id == user_id).count() > 0:
+                user = User.query.filter(User.user_id == user_id).one()
+            else:
+                return '404'
+            if len(user.discussion_profiles) > 0:
+                dpId = {'dp': user.discussion_profiles[0].id, 'url': user.discussion_profiles[0].url}
+                return json.dumps(dpId)
+
         if dp.host.user_id != user_id:
             return "Not this user's"
 
