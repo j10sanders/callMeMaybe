@@ -38,6 +38,8 @@ from sqlalchemy import exists
 from flask_admin.contrib import sqla
 import dateutil.parser
 import requests
+# import icalendar
+from ics import Calendar, Event
 from sqlalchemy import exc
 
 
@@ -323,6 +325,7 @@ def register():
     else: 
         return "register phone"
 
+@cross_origin(headers=["Access-Control-Allow-Origin", "*"])
 @app.route('/senderror', methods=["POST"])
 def senderror():
     form=request.get_json()
@@ -633,19 +636,20 @@ def new_conversation(dpid):
         user_id = None
     discussion_profile = None
     form=request.get_json()
-    #this is where I'll need truffle/Meta Mask.  May also need to send a verification text.
-    if 'phone_number' in form:
-        guest_phone_number = form['phone_number'].replace('-', '')
-        guest_email = form['email']
-    
     if user_id is not None:
         if guest.phone_number != guest_phone_number:
             guest.phone_number = guest_phone_number
 
+    if 'phone_number' in form:
+        guest_phone_number = form['phone_number'].replace('-', '')
+        guest_email = form['email']
+
     time = form['start_time']
     discussion_profile = DiscussionProfile.query.get(int(dpid))
-    conversation = Conversation(form['message'], discussion_profile, guest_phone_number=guest_phone_number, start_time=time, guest=guest, guest_email=guest_email)
+    conversation = Conversation(form['message'], discussion_profile, guest_phone_number=guest_phone_number,
+        start_time=time, guest=guest, guest_email=guest_email)
     host = discussion_profile.host
+    hostEmail = host.email
     newdate = dateutil.parser.parse(time)
     naive = newdate.replace(tzinfo=None)
     for i in host.timeslots:
@@ -655,6 +659,38 @@ def new_conversation(dpid):
     db.session.add(conversation)
     db.session.commit()
     conversation.notify_host()
+
+    c = Calendar()
+    e = Event()
+    e.name = "Dimpull Call"
+    e.begin = naive
+    e.duration = {"minutes": 30}
+    e.organizer = 'admin@dimpull.com'
+    c.events.append(e)
+    
+    with open('my.ics', 'r+') as my_file:
+        my_file.writelines(c)
+
+    messageForHost = "Calendar invite attached.  Message from caller: " + form['message']
+    messageForCaller = "Calendar invite attached.  Message you sent to " + host.first_name + " " + host.last_name + ": " + form['message']
+    hostResp = requests.post(
+        "https://api.mailgun.net/v3/dimpull.com/messages",
+        auth=("api", MAILGUN_API_KEY),
+        data={"from": "Jon jon@dimpull.com",
+              "to": [host.email],
+              "subject": "Someone Scheduled a Dimpull Call With You",
+              "text": messageForHost},
+        files=[("attachment", open('my.ics'))])
+
+    callerResp = requests.post(
+        "https://api.mailgun.net/v3/dimpull.com/messages",
+        auth=("api", MAILGUN_API_KEY),
+        data={"from": "Jon jon@dimpull.com",
+              "to": [guest_email],
+              "subject": "You scheduled a call",
+              "text": messageForCaller},
+        files=[("attachment", open('my.ics'))])
+
     return 'whitelisted'
 
 
