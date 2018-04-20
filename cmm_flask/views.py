@@ -277,7 +277,23 @@ def get_user_id(t):
 @app.route('/api/register', methods=["GET", "POST"])
 @cross_origin(headers=["Content-Type", "Authorization"])
 @cross_origin(headers=["Access-Control-Allow-Origin", "*"])
-def register():
+def register(user_id="nope", tel=None, email=None):
+    if tel is not None: #this is a user who is requesting a call
+        user = User(
+            user_id=user_id,
+            phone_number=tel,
+            area_code=tel[2:5],
+            email=email,
+            requestExpert=False,
+            first_name=email[0],
+            last_name=email[1],
+            registered_on=datetime.datetime.utcnow()
+        )
+        db.session.add(user)
+        db.session.commit()
+        return 'ok'
+        # TODO deal with users who request to be an expert after making a call
+
     try:
         user_id = get_user_id(request.headers.get("Authorization", None))
     except AttributeError:
@@ -305,6 +321,7 @@ def register():
                 auth_pic=form['auth_pic'],
                 phone_number=tel,
                 area_code=tel[2:5],
+                requestExpert=True,
             )
         resp = requests.post(
             "https://api.mailgun.net/v3/dimpull.com/messages",
@@ -381,22 +398,27 @@ def mydiscussions():
         return "user has no discussion profiles"
     return "error"
 
+def url_to_dp(url):
+    url = url.lower()
+    try:
+        dp = db.session.query(DiscussionProfile).filter_by(url = url).one()
+    except exc.SQLAlchemyError:
+        return '404'
+    return dp
+
 @app.route('/expert', methods=["GET"])
 @app.route('/expert/<url>', methods=["GET"])
 @cross_origin(headers=["Content-Type", "Authorization"])
 def discussion_profile(url): 
-    url = url.lower()
+    dp = url_to_dp(url)
     try:
         user_id = get_user_id(request.headers.get("Authorization", None))
     except AttributeError:
         user_id = "nope"
     discussion_profile = None
     if url is not None:
-        # dp = DiscussionProfile.query.get(int(discussion_id))
-        try:
-            dp = db.session.query(DiscussionProfile).filter_by(url = url).one()
-        except exc.SQLAlchemyError:
-            return "404"
+        if dp == '404':
+            return '404'
         if not dp:
             return "does not exist"
         if not dp.host.expert:
@@ -447,18 +469,11 @@ def discussion_profile(url):
             profile["reviewlist"] = reviews
         if len(need_review(dp.host, user_id)) > 0:
             profile["needReview"] = True
-        profile = json.dumps(profile)
+        else:
+            profile = json.dumps(profile)
         return profile
     return "error"
 
-
-def need_review(host, user_id):
-    # TODO: use joins instead of "has" https://stackoverflow.com/questions/8561470/sqlalchemy-filtering-by-relationship-attribute
-    conversation = Conversation \
-        .query \
-        .filter(Conversation.status == 'confirmed', Conversation.discussion_profile.has(host = host), Conversation.guest.has(user_id = user_id), Conversation.reviewed == False) \
-        .all()
-    return conversation
 
 @app.route('/api/discussions/new', methods=["GET", "POST"])
 @cross_origin(headers=["Content-Type", "Authorization"])
@@ -628,21 +643,26 @@ def edit_discussion(url=None):
 @cross_origin(headers=["Content-Type", "Authorization"])
 @app.route('/conversations/<dpid>', methods=["GET", "POST"])
 def new_conversation(dpid):
+    form=request.get_json()
     try:
         user_id = get_user_id(request.headers.get("Authorization", None))
-        guest = User.query.filter(User.user_id == user_id).one()
+        try: 
+            guest = User.query.filter(User.user_id == user_id).one()
+        except exc.SQLAlchemyError:
+            register(user_id, form['phone_number'], form['email'])
+            guest = User.query.filter(User.user_id == user_id).one()
     except AttributeError:
         guest = User.query.filter(User.user_id == 'Anonymous').one()
         user_id = None
     discussion_profile = None
-    form=request.get_json()
-    if user_id is not None:
-        if guest.phone_number != guest_phone_number:
-            guest.phone_number = guest_phone_number
 
     if 'phone_number' in form:
         guest_phone_number = form['phone_number'].replace('-', '')
         guest_email = form['email']
+
+    if user_id is not None:
+        if guest.phone_number != guest_phone_number:
+            guest.phone_number = guest_phone_number
 
     time = form['start_time']
     discussion_profile = DiscussionProfile.query.get(int(dpid))
@@ -730,7 +750,8 @@ def submitreview():
     if request.method == 'POST':
         stars = form['stars']
         comment = form['comment']
-        dp = DiscussionProfile.query.get(int(form['discussion_id']))
+        dp = url_to_dp(form['url'])
+        pdb.set_trace()
         review = Review(
             stars = stars,
             comment = comment,
@@ -745,6 +766,16 @@ def submitreview():
         db.session.commit()
         return 'success'
     return 'error'
+
+
+def need_review(host, user_id):
+    # pdb.set_trace()
+    # TODO: use joins instead of "has" https://stackoverflow.com/questions/8561470/sqlalchemy-filtering-by-relationship-attribute
+    conversation = Conversation \
+        .query \
+        .filter(Conversation.status == 'confirmed', Conversation.discussion_profile.has(host = host), Conversation.guest.has(user_id = user_id), Conversation.reviewed == False, Conversation.start_time < datetime.datetime.utcnow()) \
+        .all()
+    return conversation
 
 
 @cross_origin(headers=["Access-Control-Allow-Origin", "*"])
@@ -914,7 +945,7 @@ def _gather_outgoing_phone_number(incoming_phone_number, anonymous_phone_number)
     # conversation = Conversation.query \
     #     .filter(DiscussionProfile.anonymous_phone_number == anonymous_phone_number) \
     #     .first()
-
+    # pdb.set_trace()
     dp = DiscussionProfile.query.filter(DiscussionProfile.anonymous_phone_number == anonymous_phone_number).one()
     conversations = dp.conversations
     conversation = None
