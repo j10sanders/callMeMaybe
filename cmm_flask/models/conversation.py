@@ -30,6 +30,7 @@ class Conversation(db.Model):
     call_duration = db.Column(db.String, nullable=True)
     call_status = db.Column(db.String, nullable=True)
     parent_call_sid = db.Column(db.String, nullable=True)
+    call_timestamp = db.Column(db.DateTime, nullable=True)
 
     def confirm(self):
         self.status = 'confirmed'

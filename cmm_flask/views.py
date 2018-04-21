@@ -28,7 +28,7 @@ from cmm_flask.models.admins import AdminUser
 from werkzeug.security import check_password_hash, generate_password_hash
 from werkzeug.exceptions import Forbidden
 import pdb
-import datetime
+import datetime, pytz, requests
 from flask_admin import Admin, expose
 from flask_admin.contrib.sqla import ModelView
 from flask.ext.login import login_user, logout_user, login_required
@@ -37,9 +37,9 @@ from sqlalchemy.exc import IntegrityError
 from sqlalchemy import exists
 from flask_admin.contrib import sqla
 import dateutil.parser
-import requests
 from ics import Calendar, Event
 from sqlalchemy import exc
+from email.utils import parsedate_to_datetime
 
 
 ENV_FILE = find_dotenv()
@@ -751,32 +751,50 @@ def submitreview():
     try:
         user_id = get_user_id(request.headers.get("Authorization", None))
         guest = User.query.filter(User.user_id == user_id).one()
-    except AttributeError:
-        guest = User.query.filter(User.user_id == 'anonymous').one()
+    except (AttributeError, exc.SQLAlchemyError):
+        guest = User.query.filter(User.user_id == 'Anonymous').one()
         user_id = None
     form=request.get_json()
     if request.method == 'POST':
         stars = form['stars']
         comment = form['comment']
+        if form['initials']:
+            initials = form['initials']
+        else:
+            initials = "{}{}".format(guest.first_name[0], guest.last_name[0])
         dp = url_to_dp(form['url'])
         review = Review(
             stars = stars,
             comment = comment,
             host = dp.host,
             guest_id = user_id,
-            guest_initials = "{}{}".format(guest.first_name[0], guest.last_name[0])
+            guest_initials = initials
         )
-        conversation = need_review(dp.host, user_id)
-        for i in conversation:
-            i.reviewed = True
+        if form['cid']:
+            conversation = Conversation.query.get(int(form['cid']))
+        else:
+            conversation = need_review(dp.host, user_id)
+        conversation.reviewed = True
         db.session.add(review)
         db.session.commit()
         return 'success'
     return 'error'
 
+@cross_origin(headers=["Access-Control-Allow-Origin", "*"])
+@app.route('/checkreviewid/<rid>', methods=["POST"])
+def check_review_id(rid):
+    form=request.get_json()
+    dp = url_to_dp(form['url'])
+    conversations = dp.conversations
+    for i in conversations:
+        if i.review_id == rid and i.reviewed is False:
+            obj = {'confirmed': 'confirmed', 'cid': i.id}
+            returnvals = json.dumps(obj)
+            return returnvals
+    return 'no'
+
 
 def need_review(host, user_id):
-    # pdb.set_trace()
     # TODO: use joins instead of "has" https://stackoverflow.com/questions/8561470/sqlalchemy-filtering-by-relationship-attribute
     conversation = Conversation \
         .query \
@@ -932,40 +950,56 @@ def exchange_voice():
         return twiml(response)
     if outgoing_number:
         dial = Dial(caller_id = form.To.data) # the number the person calls is the same as the reciever sees.
-        dial.number(outgoing_number, status_callback='http://b5829e99.ngrok.io/status_callback')
+        dial.number(outgoing_number, status_callback='http://23dcf34c.ngrok.io/status_callback')
         response.append(dial)
 
     return twiml(response)
 
+
 @app.route('/status_callback', methods=["POST"])
 def status_callback():
-    # print(request.values)
-    # TODO: find conversation with those values.  Add info to conversation.  send email for review.
     r = request.values
-    ParentCallSid = r.get('ParentCallSid')
-    From = r.get('From') 
-    Timestamp = r.get('Timestamp')
+    call_from = r.get('From') 
+    twilio_time = r.get('Timestamp')
+    timestamp = parsedate_to_datetime(twilio_time)
     # this is the same as caller, so need to search db for conversation with this anonymous phone number, with timestamp < 30min greater than start_time
-    dp = DiscussionProfile.query.filter(DiscussionProfile.anonymous_phone_number == anonymous_phone_number).one()
+    dp = DiscussionProfile.query.filter(DiscussionProfile.anonymous_phone_number == call_from).one()
     conversations = dp.conversations
     conversation = None
     for i in conversations:
-        if (Timestamp - i.startime.total_seconds)/60 > -3 and (Timestamp - i.startime.total_seconds)/60 > 30:
+        if (timestamp - i.start_time.replace(tzinfo = pytz.UTC)).total_seconds()/60 > -20 and (timestamp - i.start_time.replace(tzinfo = pytz.UTC)).total_seconds()/60 < 30:
             conversation = i
-            conversation.caller_sid = r.get('CallerSid')
-            conversation.call_duration = r.get('CallDuration')
-            conversation.call_status = r.get('CallStatus')
-            conversation.parent_call_sid = r.get('ParentCallSid')
-            
-    # print('SID: {}, Duration: {}, Status: {}'.format(CallerSid, CallDuration, CallStatus))
-    return
+            try: 
+                t = conversation.caller_sid
+                conversation.call_timestamp = timestamp
+                conversation.caller_sid = conversation.caller_sid + " " + r.get('CallSid')
+                conversation.call_duration = conversation.call_duration + " " + r.get('CallDuration')
+                conversation.call_status = conversation.call_status + " " + r.get('CallStatus')
+                conversation.parent_call_sid = conversation.parent_call_sid + " " + r.get('ParentCallSid')
+            except (AttributeError, TypeError):
+                conversation.call_timestamp = timestamp
+                conversation.caller_sid = r.get('CallSid')
+                conversation.call_duration = r.get('CallDuration')
+                conversation.call_status = r.get('CallStatus')
+                conversation.parent_call_sid = r.get('ParentCallSid')
+            db.session.commit()
+            url = dp.url + "/review=" + conversation.review_id  
+            text = "Hello.  We hope your call with " + dp.host.first_name + " was valuable.  Please leave a review at: www.dimpull.com/" + url + "."
+            resp = requests.post(
+                "https://api.mailgun.net/v3/dimpull.com/messages",
+                auth=("api", MAILGUN_API_KEY),
+                data={"from": "Dimpull jon@dimpull.com",
+                      "to": [conversation.guest_email],
+                      "subject": "How was your call?",
+                      "text": text})
+            return 'success'
+    return 'fail'
 
 
 def _gather_outgoing_phone_number(incoming_phone_number, anonymous_phone_number):
     # conversation = Conversation.query \
     #     .filter(DiscussionProfile.anonymous_phone_number == anonymous_phone_number) \
     #     .first()
-    # pdb.set_trace()
     dp = DiscussionProfile.query.filter(DiscussionProfile.anonymous_phone_number == anonymous_phone_number).one()
     conversations = dp.conversations
     conversation = None
@@ -976,12 +1010,13 @@ def _gather_outgoing_phone_number(incoming_phone_number, anonymous_phone_number)
     # print("guest number: ", conversation.guest_phone_number, anonymous_phone_number)
     # if conversation.guest_phone_number == incoming_phone_number:
     #     return conversation.discussion_profile.host.phone_number
+
     difference = (datetime.datetime.utcnow() - conversation.start_time).total_seconds() / 60
     # print(datetime.datetime.now(), conversation.start_time, conversation.discussion_profile, conversation.message)
     if difference > 30:
         raise ValueError("Sorry, you needed to call within the 30 minute timeslot you booked.  It has been {} minutes since the start of your timeslot.".format(str(round(difference,1))))
     else:
-        if difference < -3:
+        if difference < -20:
             raise ValueError("The timeslot you booked doesn't start for {} minutes".format(str(round(difference,1))))
         elif conversation.guest_phone_number == incoming_phone_number:
             return conversation.discussion_profile.host.phone_number
