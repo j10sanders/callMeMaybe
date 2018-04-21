@@ -38,7 +38,6 @@ from sqlalchemy import exists
 from flask_admin.contrib import sqla
 import dateutil.parser
 import requests
-# import icalendar
 from ics import Calendar, Event
 from sqlalchemy import exc
 
@@ -105,7 +104,6 @@ def register_post():
 
 @app.route("/log_out", methods=["GET", "POST"])
 def logout():
-    # print("LOGOUT")
     logout_user()
     return redirect(url_for("login_get"))
 
@@ -118,7 +116,6 @@ admin.add_view(MyView(TimeSlot, db.session))
 admin.add_view(MyView(Review, db.session))
 admin.add_view(MyRefView(Referral, db.session))
 admin.add_view(MyView(Referent, db.session))
-
 
 ###
 class AuthError(Exception):
@@ -497,14 +494,18 @@ def new_discussion():
         host.messageforAdmins = form['message']
         refs = host.referrals
         if len(host.referrals) < 1:
-            referral = Referral(
-                host = host,
+            for x in range(0, 100):
                 code = ''.join(random.choices(string.ascii_letters + string.digits, k=7))
-            )
-            db.session.add(referral)
-        db.session.add(discussion)
-        db.session.commit()
-        return url
+                (ret, ), = db.session.query(exists().where(Referral.code==code))
+                if not ret:
+                    referral = Referral(
+                        host = host,
+                        code=code
+                    )
+                db.session.add(referral)
+                db.session.add(discussion)
+                db.session.commit()
+                return url
     return "error"
 
 def _make_url(host):
@@ -517,6 +518,14 @@ def _make_url(host):
         (ret, ), = db.session.query(exists().where(DiscussionProfile.url==newName))
         if not ret:
             return newName
+
+def _make_review_id():
+    for x in range(0, 100):
+        code = ''.join(random.choices(string.ascii_letters + string.digits, k=6))
+        (ret, ), = db.session.query(exists().where(Referral.code==code))
+        if not ret:
+            return code
+    return 'error'
 
 @app.route('/url', methods=["GET"])
 @app.route('/urlcheck/<url>', methods=["GET"])
@@ -545,7 +554,6 @@ def deleted_discussion(discussion_id):
         user_id = get_user_id(request.headers.get("Authorization", None))
     except AttributeError:
         user_id = "nope"
-    # discussion_id = request.query_string[3:] # ex) 'id=423'
     if discussion_id is not None:
         dp = DiscussionProfile.query.get(int(discussion_id))
         if dp.host.user_id == user_id:
@@ -560,9 +568,8 @@ def deleted_discussion(discussion_id):
 @cross_origin(headers=["Access-Control-Allow-Origin", "*"])
 def edit_discussion(url=None):
     if url:
-        try:
-            dp = db.session.query(DiscussionProfile).filter_by(url = url).one()
-        except exc.SQLAlchemyError:
+        dp = url_to_dp(url)
+        if dp == '404':
             return '404'
     if request.method == 'POST':
         form=request.get_json()
@@ -666,8 +673,9 @@ def new_conversation(dpid):
 
     time = form['start_time']
     discussion_profile = DiscussionProfile.query.get(int(dpid))
-    conversation = Conversation(form['message'], discussion_profile, guest_phone_number=guest_phone_number,
-        start_time=time, guest=guest, guest_email=guest_email)
+    review_id = _make_review_id()
+    conversation = Conversation(message=form['message'], discussion_profile=discussion_profile, guest_phone_number=guest_phone_number,
+        start_time=time, guest=guest, guest_email=guest_email, review_id=review_id)
     host = discussion_profile.host
     hostEmail = host.email
     newdate = dateutil.parser.parse(time)
@@ -751,7 +759,6 @@ def submitreview():
         stars = form['stars']
         comment = form['comment']
         dp = url_to_dp(form['url'])
-        pdb.set_trace()
         review = Review(
             stars = stars,
             comment = comment,
@@ -925,7 +932,7 @@ def exchange_voice():
         return twiml(response)
     if outgoing_number:
         dial = Dial(caller_id = form.To.data) # the number the person calls is the same as the reciever sees.
-        dial.number(outgoing_number, status_callback='http://3d1f4291.ngrok.io/status_callback')
+        dial.number(outgoing_number, status_callback='http://b5829e99.ngrok.io/status_callback')
         response.append(dial)
 
     return twiml(response)
@@ -933,11 +940,24 @@ def exchange_voice():
 @app.route('/status_callback', methods=["POST"])
 def status_callback():
     # print(request.values)
+    # TODO: find conversation with those values.  Add info to conversation.  send email for review.
     r = request.values
-    CallerSid = r.get('CallerSid')
-    CallDuration = r.get('CallDuration')
-    CallStatus = r.get('CallStatus')
-    print('SID: {}, Duration: {}, Status: {}'.format(CallerSid, CallDuration, CallStatus))
+    ParentCallSid = r.get('ParentCallSid')
+    From = r.get('From') 
+    Timestamp = r.get('Timestamp')
+    # this is the same as caller, so need to search db for conversation with this anonymous phone number, with timestamp < 30min greater than start_time
+    dp = DiscussionProfile.query.filter(DiscussionProfile.anonymous_phone_number == anonymous_phone_number).one()
+    conversations = dp.conversations
+    conversation = None
+    for i in conversations:
+        if (Timestamp - i.startime.total_seconds)/60 > -3 and (Timestamp - i.startime.total_seconds)/60 > 30:
+            conversation = i
+            conversation.caller_sid = r.get('CallerSid')
+            conversation.call_duration = r.get('CallDuration')
+            conversation.call_status = r.get('CallStatus')
+            conversation.parent_call_sid = r.get('ParentCallSid')
+            
+    # print('SID: {}, Duration: {}, Status: {}'.format(CallerSid, CallDuration, CallStatus))
     return
 
 
