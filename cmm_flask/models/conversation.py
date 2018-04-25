@@ -23,6 +23,7 @@ class Conversation(db.Model):
     guest_email = db.Column(db.String)
     discussion_profile = db.relationship("DiscussionProfile", back_populates="conversations")
     start_time = db.Column(db.DateTime, server_default=func.now(), nullable=False )
+    guest_wallet_address = db.Column(db.String, nullable=True)
     reviewed = db.Column(db.Boolean, nullable=True, default=False)
     unsubscribed = db.Column(db.Boolean, nullable=True, default=False)
     review_id = db.Column(db.String, nullable=True)

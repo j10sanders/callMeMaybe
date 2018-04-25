@@ -40,7 +40,7 @@ import dateutil.parser
 from ics import Calendar, Event
 from sqlalchemy import exc
 from email.utils import parsedate_to_datetime
-
+from web3.auto import w3
 
 ENV_FILE = find_dotenv()
 if ENV_FILE:
@@ -448,7 +448,7 @@ def discussion_profile(url):
             medium = dp.medium  
         profile={'host': dp.host.user_id, 'image': dp.image_url, 'description': dp.description,
             'anonymous_phone_number': dp.anonymous_phone_number, 'auth_pic': dp.host.auth_pic, 'first_name':dp.host.first_name, 
-            'last_name':dp.host.last_name, 'is_users': is_users, 'price': dp.price*1.185, 'otherProfile': dp.otherProfile, 'who': who,
+            'last_name':dp.host.last_name, 'is_users': is_users, 'price': dp.price*1.18, 'otherProfile': dp.otherProfile, 'who': who,
             'origin': dp.origin, 'excites': dp.excites, 'helps': dp.helps, 'url': dp.url, 'id': dp.id, 'linkedin': linkedin,
             'github': github, 'medium': medium, 'twitter': twitter
         }
@@ -461,7 +461,7 @@ def discussion_profile(url):
             rating += i.stars
         if len(reviews) > 0:
             if len(ratings) > 0:
-                averageRating = round(rating/len(ratings),2)
+                averageRating = rating/len(ratings)
                 profile["averageRating"] = averageRating
             profile["reviewlist"] = reviews
         if len(need_review(dp.host, user_id)) > 0:
@@ -672,10 +672,11 @@ def new_conversation(dpid):
             guest.phone_number = guest_phone_number
 
     time = form['start_time']
+    guest_wallet_address = form['fromAddress']
     discussion_profile = DiscussionProfile.query.get(int(dpid))
     review_id = _make_review_id()
     conversation = Conversation(message=form['message'], discussion_profile=discussion_profile, guest_phone_number=guest_phone_number,
-        start_time=time, guest=guest, guest_email=guest_email, review_id=review_id)
+        start_time=time, guest=guest, guest_email=guest_email, review_id=review_id, guest_wallet_address=guest_wallet_address)
     host = discussion_profile.host
     hostEmail = host.email
     newdate = dateutil.parser.parse(time)
@@ -843,6 +844,14 @@ def gettimeslots(dp):
     times=json.dumps(obj)
     return times
 
+@cross_origin(headers=["Access-Control-Allow-Origin", "*"])
+@app.route('/walletandprice/<dp>', methods=["GET"])
+def getwallet(dp):
+    discussion_profile = DiscussionProfile.query.get(int(dp))
+    obj = {'walletAddress': discussion_profile.walletAddress, 'price': round(discussion_profile.price * 1.18,2)}
+    walletandprice = json.dumps(obj)
+    return walletandprice
+
 # @app.route('/discussions/test_new', methods=["GET", "POST"])
 # def test_new_discussion():
 #     form = DiscussionProfileForm()
@@ -962,12 +971,11 @@ def status_callback():
     call_from = r.get('From') 
     twilio_time = r.get('Timestamp')
     timestamp = parsedate_to_datetime(twilio_time)
-    # this is the same as caller, so need to search db for conversation with this anonymous phone number, with timestamp < 30min greater than start_time
     dp = DiscussionProfile.query.filter(DiscussionProfile.anonymous_phone_number == call_from).one()
     conversations = dp.conversations
     conversation = None
     for i in conversations:
-        if (timestamp - i.start_time.replace(tzinfo = pytz.UTC)).total_seconds()/60 > -20 and (timestamp - i.start_time.replace(tzinfo = pytz.UTC)).total_seconds()/60 < 30:
+        if (timestamp - i.start_time.replace(tzinfo = pytz.UTC)).total_seconds()/60 > -3 and (timestamp - i.start_time.replace(tzinfo = pytz.UTC)).total_seconds()/60 < 30:
             conversation = i
             try: 
                 t = conversation.caller_sid
@@ -983,7 +991,40 @@ def status_callback():
                 conversation.call_status = r.get('CallStatus')
                 conversation.parent_call_sid = r.get('ParentCallSid')
             db.session.commit()
-            url = dp.url + "/review=" + conversation.review_id  
+            url = dp.url + "/review=" + conversation.review_id
+            if r.get('CallDuration') > 600:
+                # TODO: call end function.
+                # transaction = {
+                #     'to': '0x8850259566e9d03a1524e35687db2c78d4003409',
+                #     'gas': 2000000,
+                #     'gasPrice': 234567897654321,
+                #     'nonce': 0,
+                #     'chainId': 1
+                # }
+                abi = [{"constant":false,"inputs":[{"name":"payer","type":"address"},{"name":"payee","type":"address"}],"name":"refund","outputs":[{"name":"","type":"bool"}],"payable":false,"stateMutability":"nonpayable","type":"function"},{"constant":false,"inputs":[{"name":"price","type":"uint256"}],"name":"setFee","outputs":[],"payable":false,"stateMutability":"nonpayable","type":"function"},{"constant":true,"inputs":[],"name":"owner","outputs":[{"name":"","type":"address"}],"payable":false,"stateMutability":"view","type":"function"},{"constant":false,"inputs":[{"name":"payer","type":"address"},{"name":"payee","type":"address"}],"name":"end","outputs":[{"name":"","type":"bool"}],"payable":false,"stateMutability":"nonpayable","type":"function"},{"constant":true,"inputs":[{"name":"","type":"address"},{"name":"","type":"address"}],"name":"balances","outputs":[{"name":"","type":"uint256"}],"payable":false,"stateMutability":"view","type":"function"},{"constant":false,"inputs":[{"name":"payee","type":"address"}],"name":"start","outputs":[],"payable":true,"stateMutability":"payable","type":"function"},{"constant":true,"inputs":[],"name":"fee","outputs":[{"name":"","type":"uint256"}],"payable":false,"stateMutability":"view","type":"function"},{"inputs":[],"payable":false,"stateMutability":"nonpayable","type":"constructor"}]
+                escrow = w3.eth.contract(address='0x8850259566e9d03a1524e35687db2c78d4003409', abi=abi)
+                nonce = w3.eth.getTransactionCount('0x532DE4B689dD9DBDC9C9D2d51450487b09224CE8')
+                escrow_end = escrow.end.sendTransaction(
+                        '0x8850259566e9d03a1524e35687db2c78d4003409',
+                        1,
+                ).buildTransaction({
+                    'chainId': 1,
+                    'gas': 70000,
+                    'gasPrice': w3.toWei('1', 'gwei'),
+                    'nonce': nonce,
+                })
+                pdb.set_trace();
+                print(escrow_end)
+                private_key = '750d3e619c9c54a6e48d99b2bac5010b2c606509ceec7a470ac7158ef6dab384'
+                signed_txn = w3.eth.account.signTransaction(escrow_end, private_key=private_key)
+                signed_txn.hash
+                signed_txn.rawTransaction
+                signed_txn.r
+                signed_txn.s
+                signed_txn.v
+                w3.eth.sendRawTransaction(signed_txn.rawTransaction)  
+                w3.toHex(w3.sha3(signed_txn.rawTransaction))
+                pdb.set_trace()
             text = "Hello.  We hope your call with " + dp.host.first_name + " was valuable.  Please leave a review at: www.dimpull.com/" + url + "."
             resp = requests.post(
                 "https://api.mailgun.net/v3/dimpull.com/messages",
@@ -994,6 +1035,7 @@ def status_callback():
                       "text": text})
             return 'success'
     return 'fail'
+
 
 
 def _gather_outgoing_phone_number(incoming_phone_number, anonymous_phone_number):
@@ -1016,7 +1058,7 @@ def _gather_outgoing_phone_number(incoming_phone_number, anonymous_phone_number)
     if difference > 30:
         raise ValueError("Sorry, you needed to call within the 30 minute timeslot you booked.  It has been {} minutes since the start of your timeslot.".format(str(round(difference,1))))
     else:
-        if difference < -20:
+        if difference < -3:
             raise ValueError("The timeslot you booked doesn't start for {} minutes".format(str(round(difference,1))))
         elif conversation.guest_phone_number == incoming_phone_number:
             return conversation.discussion_profile.host.phone_number
