@@ -31,7 +31,7 @@ Jinja2==2.8
 linecache2==1.0.0
 Mako==1.0.3
 MarkupSafe==0.23
-py-solc=2.1.0
+py-solc==2.1.0
 psycopg2==2.7.3.2
 pycparser==2.14
 PyJWT==1.5.3
