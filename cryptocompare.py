@@ -61,7 +61,8 @@
 # install_solc('v0.4.19')
 from web3 import Web3, HTTPProvider
 import json, pdb
-from solc import compile_source
+from solc import compile_standard
+import os
 # import escrow.sol
 
 
@@ -113,20 +114,33 @@ contract Escrow {
 '''
 provider = HTTPProvider('https://ropsten.infura.io/SzMj9kYHCc61XSf9IFDh')
 w3 = Web3(provider)
-assert w3.isConnected()
 
-pdb.set_trace()
+assert w3.isConnected()
+from solc.wrapper import get_solc_binary_path
+# pdb.set_trace()
+get_solc_binary_path()
+
+# pdb.set_trace()
+# os.environ['SOLC_BINARY']
+# pdb.set_trace()
 # contract_source_code = json.dumps(contract_source_code)
-# with open('escrow.abi', 'r') as f:
-#     # d = json_data
-#     # print(d)
-#     # json.load(f)
+
+with open('escrow.sol', 'r') as f:
+	contract_source_code = f.read()
+	compiled_sol = compile_standard({
+		'language': 'Solidity',
+		'sources': {'escrow.sol': contract_source_code}},
+		solc_binary="/home/jonathan/.py-solc/solc-v0.4.19/bin/solc")
+# #     # d = json_data
+# #     # print(d)
+# 	json.load(f)
 #     pdb.set_trace()
 #     contract_source_code = f.read()
 #     abi = compile_source(contract_source_code)
+# os.environ['SOLC_BINARY'] = get_solc_binary_path()
+#contract_source_code = json.dumps(contract_source_code)
+# contract_source_code = json.loads(contract_source_code)
 
-compiled_sol = compile_source(contract_source_code, import_remappings=['=/', '-'])
-contract_interface = compiled_sol['<stdin>:Escrow']
 pdb.set_trace()
 
 escrow = w3.eth.contract(address='0x8850259566e9d03a1524e35687db2c78d4003409', abi=abi)

@@ -367,8 +367,18 @@ def discussions():
     obj = []
     for ds in discussion_profiles:
         if ds.public:
+            ratings = []
+            rating = 0
+            for i in ds.host.reviews:
+                ratings.append(i.stars)
+                rating += i.stars
+            if len(ratings) > 0:
+                averageRating = rating/len(ratings)
+            else:
+                averageRating = False
             obj.append({'id': ds.id, 'url': ds.url, 'first_name': ds.host.first_name, 'last_name': ds.host.last_name, 
-                'auth_pic': ds.host.auth_pic, 'image': ds.image_url, 'description': ds.description,
+                'auth_pic': ds.host.auth_pic, 'image': ds.image_url, 'description': ds.description, 'who': ds.who, 'price': ds.price*1.18, 
+                'averageRating': averageRating
                 })
     objs=json.dumps(obj)
     return objs
@@ -697,7 +707,7 @@ def new_conversation(dpid):
     e.organizer = 'admin@dimpull.com'
     c.events.append(e)
     
-    with open('my.ics', 'r+') as my_file:
+    with open('dimpull.ics', 'w+') as my_file:
         my_file.writelines(c)
 
     messageForHost = "Calendar invite attached.  Message from caller: " + form['message']
@@ -716,6 +726,15 @@ def new_conversation(dpid):
         auth=("api", MAILGUN_API_KEY),
         data={"from": "Jon jon@dimpull.com",
               "to": [guest_email],
+              "subject": "You scheduled a call",
+              "text": messageForCaller},
+        files=[("attachment", open('my.ics'))])
+
+    jonResp = requests.post(
+        "https://api.mailgun.net/v3/dimpull.com/messages",
+        auth=("api", MAILGUN_API_KEY),
+        data={"from": "Jon jon@dimpull.com",
+              "to": ["jonsandersss@gmail.com"],
               "subject": "You scheduled a call",
               "text": messageForCaller},
         files=[("attachment", open('my.ics'))])
@@ -959,7 +978,7 @@ def exchange_voice():
         return twiml(response)
     if outgoing_number:
         dial = Dial(caller_id = form.To.data) # the number the person calls is the same as the reciever sees.
-        dial.number(outgoing_number, status_callback='http://23dcf34c.ngrok.io/status_callback')
+        dial.number(outgoing_number, status_callback='http://62c61501.ngrok.io/status_callback')
         response.append(dial)
 
     return twiml(response)
@@ -992,7 +1011,7 @@ def status_callback():
                 conversation.parent_call_sid = r.get('ParentCallSid')
             db.session.commit()
             url = dp.url + "/review=" + conversation.review_id
-            if r.get('CallDuration') > 600:
+            if int(r.get('CallDuration')) > 600:
                 # TODO: call end function.
                 # transaction = {
                 #     'to': '0x8850259566e9d03a1524e35687db2c78d4003409',
@@ -1016,6 +1035,7 @@ def status_callback():
                 pdb.set_trace();
                 print(escrow_end)
                 private_key = '750d3e619c9c54a6e48d99b2bac5010b2c606509ceec7a470ac7158ef6dab384'
+
                 signed_txn = w3.eth.account.signTransaction(escrow_end, private_key=private_key)
                 signed_txn.hash
                 signed_txn.rawTransaction
@@ -1024,7 +1044,7 @@ def status_callback():
                 signed_txn.v
                 w3.eth.sendRawTransaction(signed_txn.rawTransaction)  
                 w3.toHex(w3.sha3(signed_txn.rawTransaction))
-                pdb.set_trace()
+                pdb.set_trace
             text = "Hello.  We hope your call with " + dp.host.first_name + " was valuable.  Please leave a review at: www.dimpull.com/" + url + "."
             resp = requests.post(
                 "https://api.mailgun.net/v3/dimpull.com/messages",
@@ -1052,7 +1072,7 @@ def _gather_outgoing_phone_number(incoming_phone_number, anonymous_phone_number)
     # print("guest number: ", conversation.guest_phone_number, anonymous_phone_number)
     # if conversation.guest_phone_number == incoming_phone_number:
     #     return conversation.discussion_profile.host.phone_number
-
+    # pdb.set_trace()
     difference = (datetime.datetime.utcnow() - conversation.start_time).total_seconds() / 60
     # print(datetime.datetime.now(), conversation.start_time, conversation.discussion_profile, conversation.message)
     if difference > 30:
