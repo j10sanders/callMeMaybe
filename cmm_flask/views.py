@@ -361,27 +361,35 @@ def expert_request():
     return 
 
 
-@app.route('/api/discussions', methods=["GET"])
-def discussions():
+@app.route('/api/discussions/<home>', methods=["GET"])
+def discussions(home=None):
     discussion_profiles = DiscussionProfile.query.all()
     obj = []
     for ds in discussion_profiles:
         if ds.public:
-            ratings = []
-            rating = 0
-            for i in ds.host.reviews:
-                ratings.append(i.stars)
-                rating += i.stars
-            if len(ratings) > 0:
-                averageRating = rating/len(ratings)
+            if home == 'home':
+                if ds.front_page:
+                    obj.append(_get_dps(ds)) 
             else:
-                averageRating = False
-            obj.append({'id': ds.id, 'url': ds.url, 'first_name': ds.host.first_name, 'last_name': ds.host.last_name, 
-                'auth_pic': ds.host.auth_pic, 'image': ds.image_url, 'description': ds.description, 'who': ds.who, 'price': ds.price*1.18, 
-                'averageRating': averageRating
-                })
-    objs=json.dumps(obj)
+                obj.append(_get_dps(ds)) 
+        objs=json.dumps(obj)
     return objs
+
+def _get_dps(ds):
+    ratings = []
+    rating = 0
+    for i in ds.host.reviews:
+        ratings.append(i.stars)
+        rating += i.stars
+    if len(ratings) > 0:
+        averageRating = rating/len(ratings)
+    else:
+        averageRating = False
+    obj = {'id': ds.id, 'url': ds.url, 'first_name': ds.host.first_name, 'last_name': ds.host.last_name, 
+        'auth_pic': ds.host.auth_pic, 'image': ds.image_url, 'description': ds.description, 'who': ds.who, 'price': ds.price*1.18, 
+        'averageRating': averageRating
+    }
+    return obj
 
 
 @app.route('/api/mydiscussions', methods=["GET"])

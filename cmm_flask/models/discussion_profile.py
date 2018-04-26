@@ -23,6 +23,7 @@ class DiscussionProfile(db.Model):
     excites = db.Column(db.String, nullable=True)
     helps = db.Column(db.String, nullable=True)
     public = db.Column(db.Boolean, nullable=False, server_default=false())
+    front_page = db.Column(db.Boolean, nullable=False, server_default=false())
     walletAddress = db.Column(db.String, nullable=True)
     medium = db.Column(db.String, nullable=True)
     twitter = db.Column(db.String, nullable=True)
