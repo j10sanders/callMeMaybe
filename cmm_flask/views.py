@@ -585,23 +585,36 @@ def deleted_discussion(discussion_id):
 @cross_origin(headers=["Content-Type", "Authorization"])
 @cross_origin(headers=["Access-Control-Allow-Origin", "*"])
 def edit_discussion(url=None):
+    try:
+        user_id = get_user_id(request.headers.get("Authorization", None))
+    except AttributeError:
+        user_id = "nope"
+
+    if User.query.filter(User.user_id == user_id).count() > 0:
+        user = User.query.filter(User.user_id == user_id).one()
+    else:
+        return '404'
     if url:
         dp = url_to_dp(url)
         if dp == '404':
             return '404'
+    else:
+        dp = user.discussion_profiles[0]
     if request.method == 'POST':
         form=request.get_json()
         if dp.host.user_id == form['user_id']:
-            dp.description = form['description'], 
-            dp.image_url = form['image_url'], 
+            dp.public = form['submitFull']
+            dp.submitFull = form['submitFull']
+            dp.description = form['description']
+            dp.image_url = form['image_url']
             # dp.otherProfile = form['otherProfile'],
-            dp.price = float(form['price']),
-            dp.timezone = form['timezone'],
-            dp.who = form['who'],
-            dp.excites = form['excites'],
-            dp.origin = form['origin'],
-            dp.helps = form['helps'],
-            dp.url = form['url'].lower(),
+            dp.price = float(form['price'])
+            dp.timezone = form['timezone']
+            dp.who = form['who']
+            dp.excites = form['excites']
+            dp.origin = form['origin']
+            dp.helps = form['helps']
+            dp.url = form['url'].lower()
             dp.walletAddress = form['walletAddress']
             dp.linkedin = form['linkedin']
             dp.medium = form['medium']
@@ -620,20 +633,9 @@ def edit_discussion(url=None):
             return "wrong user"
 
     if request.method == 'GET':
-        try:
-            user_id = get_user_id(request.headers.get("Authorization", None))
-        except AttributeError:
-            user_id = "nope"
-
-        if not url: # Just /editProfile
-            if User.query.filter(User.user_id == user_id).count() > 0:
-                user = User.query.filter(User.user_id == user_id).one()
-            else:
-                return '404'
-            if len(user.discussion_profiles) > 0:
-                dpId = {'dp': user.discussion_profiles[0].id, 'url': user.discussion_profiles[0].url}
-                return json.dumps(dpId)
-
+        if len(user.discussion_profiles) < 1:
+            return 'newProfile' # TODO: check what client does
+        dp = user.discussion_profiles[0]
         if dp.host.user_id != user_id:
             return "Not this user's"
 
@@ -712,14 +714,15 @@ def new_conversation(dpid):
     e.name = "Dimpull Call"
     e.begin = naive
     e.duration = {"minutes": 30}
-    e.organizer = 'admin@dimpull.com'
+    e.location = dp.anonymous_phone_number
     c.events.append(e)
     
     with open('dimpull.ics', 'w+') as my_file:
         my_file.writelines(c)
 
-    messageForHost = "Calendar invite attached.  Message from caller: " + form['message']
-    messageForCaller = "Calendar invite attached.  Message you sent to " + host.first_name + " " + host.last_name + ": " + form['message']
+    messageForHost = "Calendar invite attached.  Message from caller: " + form['message'] + " --- They will show up in your callerID as calling from: " + dp.anonymous_phone_number + "."
+    messageForCaller = "Calendar invite attached.  This is the message you sent to " + host.first_name + " " + host.last_name + ": " + form['message'] + " --- The number to call them at is: " + anonymous_phone_number + "."
+
     hostResp = requests.post(
         "https://api.mailgun.net/v3/dimpull.com/messages",
         auth=("api", MAILGUN_API_KEY),
@@ -746,8 +749,9 @@ def new_conversation(dpid):
               "subject": "You scheduled a call",
               "text": messageForCaller},
         files=[("attachment", open('my.ics'))])
-
-    return 'whitelisted'
+    obj = {'anonymous_phone_number': dp.anonymous_phone_number, 'whitelisted': True}
+    obj - json.dumps(obj)
+    return obj
 
 
 
@@ -1040,7 +1044,7 @@ def status_callback():
                     'gasPrice': w3.toWei('1', 'gwei'),
                     'nonce': nonce,
                 })
-                pdb.set_trace();
+
                 print(escrow_end)
                 private_key = '750d3e619c9c54a6e48d99b2bac5010b2c606509ceec7a470ac7158ef6dab384'
 
@@ -1052,7 +1056,7 @@ def status_callback():
                 signed_txn.v
                 w3.eth.sendRawTransaction(signed_txn.rawTransaction)  
                 w3.toHex(w3.sha3(signed_txn.rawTransaction))
-                pdb.set_trace
+
             text = "Hello.  We hope your call with " + dp.host.first_name + " was valuable.  Please leave a review at: www.dimpull.com/" + url + "."
             resp = requests.post(
                 "https://api.mailgun.net/v3/dimpull.com/messages",
