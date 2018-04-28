@@ -709,19 +709,21 @@ def new_conversation(dpid):
     db.session.commit()
     conversation.notify_host()
 
+    anonymous_phone_number = discussion_profile.anonymous_phone_number
+
     c = Calendar()
     e = Event()
     e.name = "Dimpull Call"
     e.begin = naive
     e.duration = {"minutes": 30}
-    e.location = dp.anonymous_phone_number
+    e.location = anonymous_phone_number
     c.events.append(e)
     
     with open('dimpull.ics', 'w+') as my_file:
         my_file.writelines(c)
 
-    messageForHost = "Calendar invite attached.  Message from caller: " + form['message'] + " --- They will show up in your callerID as calling from: " + dp.anonymous_phone_number + "."
-    messageForCaller = "Calendar invite attached.  This is the message you sent to " + host.first_name + " " + host.last_name + ": " + form['message'] + " --- The number to call them at is: " + anonymous_phone_number + "."
+    messageForHost = "Calendar invite attached.  Message from caller: '" + form['message'] + "' --- They will show up in your callerID as calling from: " + anonymous_phone_number + "."
+    messageForCaller = "Calendar invite attached.  This is the message you sent to " + host.first_name + " " + host.last_name + ": '" + form['message'] + "' --- The number to call them at is: " + anonymous_phone_number + "."
 
     hostResp = requests.post(
         "https://api.mailgun.net/v3/dimpull.com/messages",
@@ -749,8 +751,8 @@ def new_conversation(dpid):
               "subject": "You scheduled a call",
               "text": messageForCaller},
         files=[("attachment", open('my.ics'))])
-    obj = {'anonymous_phone_number': dp.anonymous_phone_number, 'whitelisted': True}
-    obj - json.dumps(obj)
+    obj = {'anonymous_phone_number': anonymous_phone_number, 'whitelisted': True, 'hostFirstName': host.first_name}
+    obj = json.dumps(obj)
     return obj
 
 
