@@ -596,6 +596,7 @@ def edit_discussion(url=None):
     if request.method == 'POST':
         form=request.get_json()
         if dp.host.user_id == form['user_id']:
+            dp.vipid = _make_random_id(review=False)
             dp.public = form['submitFull']
             dp.submitFull = form['submitFull']
             dp.description = form['description']
@@ -707,7 +708,6 @@ def new_conversation(dpid):
     time = form['start_time']
     guest_wallet_address = form['fromAddress']
     discussion_profile = DiscussionProfile.query.get(int(dpid))
-    discussion_profile.vipid = _make_random_id(review=False)
     review_id = _make_random_id(review=True)
     conversation = Conversation(message=form['message'], discussion_profile=discussion_profile, guest_phone_number=guest_phone_number,
         start_time=time, guest=guest, guest_email=guest_email, review_id=review_id, guest_wallet_address=guest_wallet_address)
