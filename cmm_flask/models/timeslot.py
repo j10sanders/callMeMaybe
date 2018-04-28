@@ -12,6 +12,8 @@ class TimeSlot(db.Model):
     end_time = db.Column(db.DateTime, nullable=False)
     host_id = db.Column(db.Integer, db.ForeignKey('users.id'))
     host = db.relationship("User", back_populates="timeslots")
+    pending = db.Column(db.Boolean, nullable=True, default=False)
+    pending_time = db.Column(db.DateTime, nullable=True)
 
     def __init__(self, start_time, end_time, host):
         self.start_time = start_time

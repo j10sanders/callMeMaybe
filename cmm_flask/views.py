@@ -668,6 +668,26 @@ def edit_discussion(url=None):
 
 @cross_origin(headers=["Access-Control-Allow-Origin", "*"])
 @cross_origin(headers=["Content-Type", "Authorization"])
+@app.route('/holdtimeslot/<dpid>', methods=["POST"])
+def host_timeslot(dpid):
+    form=request.get_json()
+    discussion_profile = DiscussionProfile.query.get(int(dpid))
+    time = form['start_time']
+    host = discussion_profile.host
+    newdate = dateutil.parser.parse(time)
+    naive = newdate.replace(tzinfo=None)
+    for slot in host.timeslots:
+        if slot.start_time == naive:
+            if not slot.pending or (slot.pending_time - datetime.datetime.utcnow()).total_seconds() / 60 > 12.1:
+                slot.pending = True
+                slot.pending_time = datetime.datetime.utcnow()
+                db.session.commit()
+                return "added pending"
+            return "currently pending"
+    return "error"
+
+@cross_origin(headers=["Access-Control-Allow-Origin", "*"])
+@cross_origin(headers=["Content-Type", "Authorization"])
 @app.route('/conversations/<dpid>', methods=["GET", "POST"])
 def new_conversation(dpid):
     form=request.get_json()
@@ -873,7 +893,8 @@ def gettimeslots(dp):
     obj = []
     for i in host.timeslots:
         if datetime.datetime.now() < i.end_time:
-            obj.append({'start': i.start_time.isoformat(), 'end': i.end_time.isoformat()})
+            if not i.pending or (i.pending_time - datetime.datetime.utcnow()).total_seconds() / 60 > 16:
+                obj.append({'start': i.start_time.isoformat(), 'end': i.end_time.isoformat()})
     times=json.dumps(obj)
     return times
 
