@@ -893,7 +893,7 @@ def gettimeslots(dp):
     obj = []
     for i in host.timeslots:
         if datetime.datetime.now() < i.end_time:
-            if not i.pending or (i.pending_time - datetime.datetime.utcnow()).total_seconds() / 60 > 16:
+            if not i.pending or (datetime.datetime.utcnow() - i.pending_time).total_seconds() / 60 > 16:
                 obj.append({'start': i.start_time.isoformat(), 'end': i.end_time.isoformat()})
     times=json.dumps(obj)
     return times
