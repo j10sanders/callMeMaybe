@@ -30,6 +30,7 @@ class DiscussionProfile(db.Model):
     twitter = db.Column(db.String, nullable=True)
     linkedin = db.Column(db.String, nullable=True)
     github = db.Column(db.String, nullable=True)
+    vipid = db.Column(db.String, nullable=True)
 
     def __init__(self, host, otherProfile):
         # self.description = description

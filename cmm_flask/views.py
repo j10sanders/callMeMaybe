@@ -53,7 +53,6 @@ OCTOPUS_KEY=env.get("OCTOPUS_KEY")
 ALGORITHMS = ["RS256"]
 
 class MyView(sqla.ModelView):
-
     def is_accessible(self):
         return current_user.is_authenticated
 
@@ -107,7 +106,6 @@ def logout():
     logout_user()
     return redirect(url_for("login_get"))
 
-
 admin=Admin(app, name="Dimpull Dashboard")
 admin.add_view(MyView(User, db.session))
 admin.add_view(MyView(DiscussionProfile, db.session))
@@ -157,7 +155,6 @@ def get_token_auth_header():
     token = parts[1]
     return token
 
-
 def requires_scope(required_scope):
     """Determines if the required scope is present in the access token
     Args:
@@ -171,8 +168,6 @@ def requires_scope(required_scope):
             if token_scope == required_scope:
                 return True
     return False
-
-
 
 def requires_auth(f):
     """Determines if the access token is valid
@@ -233,7 +228,6 @@ def requires_auth(f):
                         "description": "Unable to find appropriate key"}, 400)
     return decorated
 
-
 def get_user_id(t):
     s_t = t.split()
     token = s_t[1]
@@ -269,7 +263,6 @@ def get_user_id(t):
         issuer="https://"+AUTH0_DOMAIN+"/"
     )
     return payload['sub']
-
 
 @app.route('/api/register', methods=["GET", "POST"])
 @cross_origin(headers=["Content-Type", "Authorization"])
@@ -352,7 +345,6 @@ def senderror():
                   "text": form['err'] + " " + form['email']})
     return
 
-
 @app.route('/expertrequest', methods=["GET, POST"])
 @cross_origin(headers=["Content-Type", "Authorization"])
 @cross_origin(headers=["Access-Control-Allow-Origin", "*"])
@@ -390,7 +382,6 @@ def _get_dps(ds):
         'averageRating': averageRating
     }
     return obj
-
 
 @app.route('/api/mydiscussions', methods=["GET"])
 @cross_origin(headers=["Content-Type", "Authorization"])
@@ -489,7 +480,6 @@ def discussion_profile(url):
         return profile
     return "error"
 
-
 @app.route('/api/discussions/new', methods=["GET", "POST"])
 @cross_origin(headers=["Content-Type", "Authorization"])
 @cross_origin(headers=["Access-Control-Allow-Origin", "*"])
@@ -537,10 +527,13 @@ def _make_url(host):
         if not ret:
             return newName
 
-def _make_review_id():
+def _make_random_id(review):
     for x in range(0, 100):
         code = ''.join(random.choices(string.ascii_letters + string.digits, k=6))
-        (ret, ), = db.session.query(exists().where(Referral.code==code))
+        if review:
+            (ret, ), = db.session.query(exists().where(Referral.code==code))
+        else:
+            (ret, ), = db.session.query(exists().where(DiscussionProfile.vipid==code))
         if not ret:
             return code
     return 'error'
@@ -714,7 +707,8 @@ def new_conversation(dpid):
     time = form['start_time']
     guest_wallet_address = form['fromAddress']
     discussion_profile = DiscussionProfile.query.get(int(dpid))
-    review_id = _make_review_id()
+    discussion_profile.vipid = _make_random_id(review=False)
+    review_id = _make_random_id(review=True)
     conversation = Conversation(message=form['message'], discussion_profile=discussion_profile, guest_phone_number=guest_phone_number,
         start_time=time, guest=guest, guest_email=guest_email, review_id=review_id, guest_wallet_address=guest_wallet_address)
     host = discussion_profile.host
@@ -742,8 +736,8 @@ def new_conversation(dpid):
     with open('dimpull.ics', 'w+') as my_file:
         my_file.writelines(c)
 
-    messageForHost = "Calendar invite attached.  Message from caller: '" + form['message'] + "' --- They will show up in your callerID as calling from: " + anonymous_phone_number + "."
-    messageForCaller = "Calendar invite attached.  This is the message you sent to " + host.first_name + " " + host.last_name + ": '" + form['message'] + "' --- The number to call them at is: " + anonymous_phone_number + "."
+    messageForHost = "Calendar invite attached.  Message from caller: '" + form['message'] + "' --- They will show up in your Caller ID as calling from: " + anonymous_phone_number + "."
+    messageForCaller = "Calendar invite attached.  This is the message you sent to " + host.first_name + " " + host.last_name + ": '" + form['message'] + "' --- The number to call " + host.first_name + " at is: " + anonymous_phone_number + "."
 
     hostResp = requests.post(
         "https://api.mailgun.net/v3/dimpull.com/messages",
@@ -753,7 +747,6 @@ def new_conversation(dpid):
               "subject": "Someone Scheduled a Dimpull Call With You",
               "text": messageForHost},
         files=[("attachment", open('my.ics'))])
-
     callerResp = requests.post(
         "https://api.mailgun.net/v3/dimpull.com/messages",
         auth=("api", MAILGUN_API_KEY),
@@ -762,7 +755,6 @@ def new_conversation(dpid):
               "subject": "You scheduled a call",
               "text": messageForCaller},
         files=[("attachment", open('my.ics'))])
-
     jonResp = requests.post(
         "https://api.mailgun.net/v3/dimpull.com/messages",
         auth=("api", MAILGUN_API_KEY),
@@ -774,8 +766,6 @@ def new_conversation(dpid):
     obj = {'anonymous_phone_number': anonymous_phone_number, 'whitelisted': True, 'hostFirstName': host.first_name}
     obj = json.dumps(obj)
     return obj
-
-
 
 @cross_origin(headers=["Access-Control-Allow-Origin", "*"])
 @app.route('/api/savetimeslots', methods=["POST"])
@@ -796,7 +786,6 @@ def savetimeslots():
             db.session.commit()
         return 'success'
     return 'error'
-
 
 @cross_origin(headers=["Access-Control-Allow-Origin", "*"])
 @cross_origin(headers=["Content-Type", "Authorization"])
@@ -835,6 +824,15 @@ def submitreview():
     return 'error'
 
 @cross_origin(headers=["Access-Control-Allow-Origin", "*"])
+@app.route('/checkvip/<vip>', methods=["POST"])
+def check_vip_id(vip):
+    form=request.get_json()
+    dp = url_to_dp(form['url'])
+    if dp.vipid == vip:
+        return 'confirmed'
+    return 'no'
+
+@cross_origin(headers=["Access-Control-Allow-Origin", "*"])
 @app.route('/checkreviewid/<rid>', methods=["POST"])
 def check_review_id(rid):
     form=request.get_json()
@@ -847,7 +845,6 @@ def check_review_id(rid):
             return returnvals
     return 'no'
 
-
 def need_review(host, user_id):
     # TODO: use joins instead of "has" https://stackoverflow.com/questions/8561470/sqlalchemy-filtering-by-relationship-attribute
     conversation = Conversation \
@@ -855,7 +852,6 @@ def need_review(host, user_id):
         .filter(Conversation.status == 'confirmed', Conversation.discussion_profile.has(host = host), Conversation.guest.has(user_id = user_id), Conversation.reviewed == False, Conversation.start_time < datetime.datetime.utcnow()) \
         .all()
     return conversation
-
 
 @cross_origin(headers=["Access-Control-Allow-Origin", "*"])
 @cross_origin(headers=["Content-Type", "Authorization"])
@@ -883,7 +879,6 @@ def addemail():
     r = requests.post("https://emailoctopus.com/api/1.3/lists/6543ad73-3cfa-11e8-a3c9-06b79b628af2/contacts", 
        data={'api_key': OCTOPUS_KEY, 'email_address': form['email'], 'subscribed': True})
     return "submitted"
-
 
 @cross_origin(headers=["Access-Control-Allow-Origin", "*"])
 @app.route('/availability/<dp>', methods=["GET"])
@@ -918,7 +913,6 @@ def getwallet(dp):
 #             db.session.add(discussion)
 #             db.session.commit()
 #             return redirect_to('discussions')
-
 #     return view('discussion_new', form)
 
 @cross_origin(headers=["Access-Control-Allow-Origin", "*"])
@@ -1001,7 +995,6 @@ def exchange_sms():
     response.addSms(form.Body.data, to=outgoing_number)
     return twiml(response)
 
-
 @app.route('/exchange/voice', methods=["POST"])
 def exchange_voice():
     form = ExchangeForm()
@@ -1015,9 +1008,7 @@ def exchange_voice():
         dial = Dial(caller_id = form.To.data) # the number the person calls is the same as the reciever sees.
         dial.number(outgoing_number, status_callback='http://62c61501.ngrok.io/status_callback')
         response.append(dial)
-
     return twiml(response)
-
 
 @app.route('/status_callback', methods=["POST"])
 def status_callback():
@@ -1091,8 +1082,6 @@ def status_callback():
             return 'success'
     return 'fail'
 
-
-
 def _gather_outgoing_phone_number(incoming_phone_number, anonymous_phone_number):
     # conversation = Conversation.query \
     #     .filter(DiscussionProfile.anonymous_phone_number == anonymous_phone_number) \
@@ -1119,7 +1108,6 @@ def _gather_outgoing_phone_number(incoming_phone_number, anonymous_phone_number)
             return conversation.discussion_profile.host.phone_number
         else:
             return "fail"
-
 
 def _respond_message(message):
     response = MessagingResponse()
