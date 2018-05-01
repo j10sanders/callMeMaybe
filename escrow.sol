@@ -1,4 +1,4 @@
-'''pragma solidity ^0.4.13;
+pragma solidity ^0.4.17;
 
 contract Escrow {
   address public owner;
@@ -41,5 +41,4 @@ contract Escrow {
     payer.transfer(value);
     return true;
   }
-  
-}'''
+}

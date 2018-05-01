@@ -345,13 +345,24 @@ def senderror():
                   "text": form['err'] + " " + form['email']})
     return
 
-@app.route('/expertrequest', methods=["GET, POST"])
+
+@app.route('/isexpert', methods=["GET"])
 @cross_origin(headers=["Content-Type", "Authorization"])
 @cross_origin(headers=["Access-Control-Allow-Origin", "*"])
-def expert_request():
-    form = request.get_json()
-    return 
-
+def is_expert():
+    pdb.set_trace()
+    try:
+        user_id = get_user_id(request.headers.get("Authorization", None))
+        host = User.query.filter(User.user_id == user_id).one()
+    except (AttributeError, exc.SQLAlchemyError):
+        return "no"
+    pdb.set_trace()
+    dps = host.discussion_profiles
+    if len(dps) > 0:
+        data = {'expert': True}
+        obj = json.dumps(data)
+        return obj
+    return "no"
 
 @app.route('/api/discussions/<home>', methods=["GET"])
 def discussions(home=None):
