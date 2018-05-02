@@ -585,6 +585,22 @@ def deleted_discussion(discussion_id):
             return "deleted"
     return "error"
 
+@app.route('/geturl', methods=["GET"])
+@cross_origin(headers=["Content-Type", "Authorization"])
+@cross_origin(headers=["Access-Control-Allow-Origin", "*"])
+def get_users_url():
+    try:
+        user_id = get_user_id(request.headers.get("Authorization", None))
+    except AttributeError:
+        return '404'
+    if User.query.filter(User.user_id == user_id).count() > 0:
+        user = User.query.filter(User.user_id == user_id).one()
+        url = {'url': user.discussion_profiles[0].url}
+        obj = json.dumps(url)
+        return obj
+    return '404'
+    
+
 @app.route('/editProfile', methods=["GET", "POST"])
 @app.route('/editProfile/<url>', methods=["GET", "POST"])
 @cross_origin(headers=["Content-Type", "Authorization"])
