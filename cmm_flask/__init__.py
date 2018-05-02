@@ -31,5 +31,4 @@ app = create_app()
 
 
 import cmm_flask.views
-import cmm_flask.schedule_emails
 from . import admin_login
