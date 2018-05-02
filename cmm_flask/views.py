@@ -312,6 +312,7 @@ def register(user_id="nope", tel=None, email=None):
                 phone_number=tel,
                 area_code=tel[2:5],
                 requestExpert=True,
+                registered_on=datetime.datetime.utcnow()
             )
         resp = requests.post(
             "https://api.mailgun.net/v3/dimpull.com/messages",
@@ -373,7 +374,9 @@ def discussions(home=None):
                     obj.append(_get_dps(ds)) 
             else:
                 obj.append(_get_dps(ds)) 
-        objs=json.dumps(obj)
+    if home == 'home':
+        obj = sorted(obj, key=lambda k: k['id']) #sort so hard coded front page is same order
+    objs=json.dumps(obj)
     return objs
 
 def _get_dps(ds):
