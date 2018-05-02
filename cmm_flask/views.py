@@ -610,7 +610,6 @@ def edit_discussion(url=None):
         user_id = get_user_id(request.headers.get("Authorization", None))
     except AttributeError:
         user_id = "nope"
-
     if User.query.filter(User.user_id == user_id).count() > 0:
         user = User.query.filter(User.user_id == user_id).one()
     else:
@@ -707,6 +706,25 @@ def host_timeslot(dpid):
                 return "added pending"
             return "currently pending"
     return "error"
+
+@cross_origin(headers=["Access-Control-Allow-Origin", "*"])
+@cross_origin(headers=["Content-Type", "Authorization"])
+@app.route('/getbookedtimeslots', methods=["GET"])
+def get_booked_timeslots():
+    try:
+        user_id = get_user_id(request.headers.get("Authorization", None))
+    except AttributeError:
+        return '404'
+    host = User.query.filter(User.user_id == user_id).one()
+    dp = host.discussion_profiles[0]
+    convos = dp.conversations
+    obj = []
+    for i in convos:
+        if i.start_time > datetime.datetime.now():
+            obj.append([i.start_time.isoformat(), i.message])
+    obj = json.dumps({'times': obj})
+    return obj
+
 
 @cross_origin(headers=["Access-Control-Allow-Origin", "*"])
 @cross_origin(headers=["Content-Type", "Authorization"])
@@ -809,7 +827,7 @@ def savetimeslots():
                 start_time = i['start'],
                 end_time = i['end'],
                 host = host,
-            )
+            ) 
             db.session.add(timeslot)
             db.session.commit()
         return 'success'
