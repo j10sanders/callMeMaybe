@@ -360,7 +360,7 @@ def is_expert():
         return "no"
     dps = host.discussion_profiles
     if len(dps) > 0:
-        data = {'expert': True}
+        data = {'expert': True, 'pic': host.auth_pic}
         obj = json.dumps(data)
         return obj
     return "no"
