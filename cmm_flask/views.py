@@ -722,10 +722,66 @@ def get_booked_timeslots():
     convos = dp.conversations
     obj = []
     for i in convos:
-        if i.start_time > datetime.datetime.now():
+        if i.start_time > datetime.datetime.utcnow():
             obj.append([i.start_time.isoformat(), i.message])
     obj = json.dumps({'times': obj})
     return obj
+
+@cross_origin(headers=["Access-Control-Allow-Origin", "*"])
+@cross_origin(headers=["Content-Type", "Authorization"])
+@app.route('/cancelcall', methods=["POST"])
+def cancel_call():
+    try:
+        user_id = get_user_id(request.headers.get("Authorization", None))
+    except AttributeError:
+        return '404'
+    form=request.get_json()
+    host = User.query.filter(User.user_id == user_id).one()
+    dp = host.discussion_profiles[0]
+    convos = dp.conversations
+    obj = {'canceled': False}
+    for i in convos:
+        if i.start_time == dateutil.parser.parse(form['cancelCallTime']):
+            refunded = _refund(i, host);
+            if refunded:
+                db.session.delete(i)
+                db.session.commit()
+                obj['canceled'] = True
+    obj = json.dumps(obj)
+    return obj
+
+def _refund(conversation, host):
+    guest_email = conversation.guest_email
+    messageForCaller = "We are very sorry to inform you that your call with " + host.first_name + " was canceled.  We don't allow experts to do this more than twice... if this was their second time, then they will be removed from Dimpull.  You will be refunded shortly -- the amount you paid will be transfered back to your wallet address, although you may have lost a small amount in gas fees." 
+    messageForHost = "You canceled the call at: " + conversation.start_time.isoformat() + ".  Please make sure to only keep times in your profile that you can accept.  We don't allow users to book calls less than 30 minutes in advance"
+    hostResp = requests.post(
+        "https://api.mailgun.net/v3/dimpull.com/messages",
+        auth=("api", MAILGUN_API_KEY),
+        data={"from": "Jon jon@dimpull.com",
+              "to": [host.email],
+              "subject": "You canceled a call on Dimpull",
+              "text": messageForHost}
+        )
+    callerResp = requests.post(
+        "https://api.mailgun.net/v3/dimpull.com/messages",
+        auth=("api", MAILGUN_API_KEY),
+        data={"from": "Jon jon@dimpull.com",
+              "to": [guest_email],
+              "subject": "A CALL WAS CANCELED",
+              "text": messageForHost}
+        )
+    jonResp = requests.post(
+        "https://api.mailgun.net/v3/dimpull.com/messages",
+        auth=("api", MAILGUN_API_KEY),
+        data={"from": "Jon jon@dimpull.com",
+              "to": ["jonsandersss@gmail.com"],
+              "subject": "We are sorry - your Dimpull call was cancelled.",
+              "text": messageForCaller}
+        )
+    # TODO: actually send the refund.
+    print(hostResp, callerResp, jonResp)
+    return True
+
 
 
 @cross_origin(headers=["Access-Control-Allow-Origin", "*"])
