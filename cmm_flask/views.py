@@ -206,7 +206,8 @@ def requires_auth(f):
                     rsa_key,
                     algorithms=ALGORITHMS,
                     audience=AUTH0_AUDIENCE,
-                    issuer="https://"+AUTH0_DOMAIN+"/"
+                    issuer="https://"+AUTH0_DOMAIN+"/",
+                    verify_exp=False
                 )
             except jwt.ExpiredSignatureError:
                 raise AuthError({"code": "token_expired",
@@ -260,7 +261,8 @@ def get_user_id(t):
         rsa_key,
         algorithms=ALGORITHMS,
         audience=AUTH0_AUDIENCE,
-        issuer="https://"+AUTH0_DOMAIN+"/"
+        issuer="https://"+AUTH0_DOMAIN+"/",
+        options={'verify_exp':False}
     )
     return payload['sub']
 
@@ -792,7 +794,7 @@ def new_conversation(dpid):
               "to": [host.email],
               "subject": "Someone Scheduled a Dimpull Call With You",
               "text": messageForHost},
-        files=[("attachment", open('my.ics'))])
+        files=[("attachment", open('dimpull.ics'))])
     callerResp = requests.post(
         "https://api.mailgun.net/v3/dimpull.com/messages",
         auth=("api", MAILGUN_API_KEY),
@@ -800,7 +802,7 @@ def new_conversation(dpid):
               "to": [guest_email],
               "subject": "You scheduled a call",
               "text": messageForCaller},
-        files=[("attachment", open('my.ics'))])
+        files=[("attachment", open('dimpull.ics'))])
     jonResp = requests.post(
         "https://api.mailgun.net/v3/dimpull.com/messages",
         auth=("api", MAILGUN_API_KEY),
@@ -808,7 +810,7 @@ def new_conversation(dpid):
               "to": ["jonsandersss@gmail.com"],
               "subject": "You scheduled a call",
               "text": messageForCaller},
-        files=[("attachment", open('my.ics'))])
+        files=[("attachment", open('dimpull.ics'))])
     obj = {'anonymous_phone_number': anonymous_phone_number, 'whitelisted': True, 'hostFirstName': host.first_name}
     obj = json.dumps(obj)
     return obj
