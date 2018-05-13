@@ -1206,7 +1206,7 @@ def _gather_outgoing_phone_number(incoming_phone_number, anonymous_phone_number)
     if difference > 30:
         raise ValueError("Sorry, you needed to call within the 30 minute timeslot you booked.  It has been {} minutes since the start of your timeslot.".format(str(round(difference,1))))
     else:
-        if difference < -30:
+        if difference < -3:
             raise ValueError("The timeslot you booked doesn't start for {} minutes".format(str(round(difference,1))))
         elif conversation.guest_phone_number == incoming_phone_number:
             return conversation.discussion_profile.host.phone_number

@@ -145,11 +145,11 @@ pdb.set_trace()
 
 escrow_end = escrow.functions.end(
 		'0x532DE4B689dD9DBDC9C9D2d51450487b09224CE8',
-		'0x07de4977770Df1f77d7D73141063c7085Bed716a'
+		'0x67e91efB35803381801A0DE70734a62F487803ea'
 	).buildTransaction({
 		'from': '0x532DE4B689dD9DBDC9C9D2d51450487b09224CE8',
 		'chainId': 3,
-		'gas': 70000,
+		'gas': 970000,
 		'gasPrice': w3.toWei('1', 'gwei'),
 		'nonce': nonce,
 	})
