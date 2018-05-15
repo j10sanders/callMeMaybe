@@ -1169,7 +1169,8 @@ def _gather_outgoing_phone_number(incoming_phone_number, anonymous_phone_number)
     for i in conversations:
         if i.guest_phone_number == incoming_phone_number:
             conversation = i
-
+    if not conversation:
+        raise ValueError("Sorry, it looks like you are not booked for a call at this time.")
     # print("guest number: ", conversation.guest_phone_number, anonymous_phone_number)
     # if conversation.guest_phone_number == incoming_phone_number:
     #     return conversation.discussion_profile.host.phone_number
