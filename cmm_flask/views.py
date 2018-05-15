@@ -597,11 +597,10 @@ def get_users_url():
         return '404'
     if User.query.filter(User.user_id == user_id).count() > 0:
         user = User.query.filter(User.user_id == user_id).one()
-        url = {'url': user.discussion_profiles[0].url}
+        url = {'url': user.discussion_profiles[0].url, 'referral': user.referrals[0].code, 'vip': user.discussion_profiles[0].vipid}
         obj = json.dumps(url)
         return obj
     return '404'
-    
 
 @app.route('/editProfile', methods=["GET", "POST"])
 @app.route('/editProfile/<url>', methods=["GET", "POST"])
@@ -1110,7 +1109,7 @@ def exchange_voice():
         return twiml(response)
     if outgoing_number:
         dial = Dial(caller_id = form.To.data) # the number the person calls is the same as the reciever sees.
-        dial.number(outgoing_number, status_callback='http://62c61501.ngrok.io/status_callback')
+        dial.number(outgoing_number, status_callback='https://cm-m.herokuapp.com/status_callback')
         response.append(dial)
     return twiml(response)
 
@@ -1141,40 +1140,7 @@ def status_callback():
                 conversation.parent_call_sid = r.get('ParentCallSid')
             db.session.commit()
             url = dp.url + "/review=" + conversation.review_id
-            if int(r.get('CallDuration')) > 600:
-                # TODO: call end function.
-                # transaction = {
-                #     'to': '0x8850259566e9d03a1524e35687db2c78d4003409',
-                #     'gas': 2000000,
-                #     'gasPrice': 234567897654321,
-                #     'nonce': 0,
-                #     'chainId': 1
-                # }
-                abi = [{"constant":false,"inputs":[{"name":"payer","type":"address"},{"name":"payee","type":"address"}],"name":"refund","outputs":[{"name":"","type":"bool"}],"payable":false,"stateMutability":"nonpayable","type":"function"},{"constant":false,"inputs":[{"name":"price","type":"uint256"}],"name":"setFee","outputs":[],"payable":false,"stateMutability":"nonpayable","type":"function"},{"constant":true,"inputs":[],"name":"owner","outputs":[{"name":"","type":"address"}],"payable":false,"stateMutability":"view","type":"function"},{"constant":false,"inputs":[{"name":"payer","type":"address"},{"name":"payee","type":"address"}],"name":"end","outputs":[{"name":"","type":"bool"}],"payable":false,"stateMutability":"nonpayable","type":"function"},{"constant":true,"inputs":[{"name":"","type":"address"},{"name":"","type":"address"}],"name":"balances","outputs":[{"name":"","type":"uint256"}],"payable":false,"stateMutability":"view","type":"function"},{"constant":false,"inputs":[{"name":"payee","type":"address"}],"name":"start","outputs":[],"payable":true,"stateMutability":"payable","type":"function"},{"constant":true,"inputs":[],"name":"fee","outputs":[{"name":"","type":"uint256"}],"payable":false,"stateMutability":"view","type":"function"},{"inputs":[],"payable":false,"stateMutability":"nonpayable","type":"constructor"}]
-                escrow = w3.eth.contract(address='0x8850259566e9d03a1524e35687db2c78d4003409', abi=abi)
-                nonce = w3.eth.getTransactionCount('0x532DE4B689dD9DBDC9C9D2d51450487b09224CE8')
-                escrow_end = escrow.end.sendTransaction(
-                        '0x8850259566e9d03a1524e35687db2c78d4003409',
-                        1,
-                ).buildTransaction({
-                    'chainId': 1,
-                    'gas': 70000,
-                    'gasPrice': w3.toWei('1', 'gwei'),
-                    'nonce': nonce,
-                })
-
-                print(escrow_end)
-                private_key = '750d3e619c9c54a6e48d99b2bac5010b2c606509ceec7a470ac7158ef6dab384'
-
-                signed_txn = w3.eth.account.signTransaction(escrow_end, private_key=private_key)
-                signed_txn.hash
-                signed_txn.rawTransaction
-                signed_txn.r
-                signed_txn.s
-                signed_txn.v
-                w3.eth.sendRawTransaction(signed_txn.rawTransaction)  
-                w3.toHex(w3.sha3(signed_txn.rawTransaction))
-
+            callDetails = 'CallSid: ' + r.get('CallSid') + '  CallDuration: ' + r.get('CallDuration') + '  CallStatus: '  + r.get('CallStatus') + '  ParentCallSid: ' + r.get('ParentCallSid')
             text = "Hello.  We hope your call with " + dp.host.first_name + " was valuable.  Please leave a review at: www.dimpull.com/" + url + "."
             resp = requests.post(
                 "https://api.mailgun.net/v3/dimpull.com/messages",
@@ -1183,6 +1149,13 @@ def status_callback():
                       "to": [conversation.guest_email],
                       "subject": "How was your call?",
                       "text": text})
+            respJon = requests.post(
+                "https://api.mailgun.net/v3/dimpull.com/messages",
+                auth=("api", MAILGUN_API_KEY),
+                data={"from": "Dimpull jon@dimpull.com",
+                      "to": [conversation.guest_email],
+                      "subject": "Call just happened!",
+                      "text": callDetails})
             return 'success'
     return 'fail'
 
