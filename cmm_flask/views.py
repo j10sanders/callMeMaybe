@@ -984,6 +984,21 @@ def addemail():
     return "submitted"
 
 @cross_origin(headers=["Access-Control-Allow-Origin", "*"])
+@app.route('/requestavailability', methods=["POST"])
+def requestavailability():
+    form=request.get_json()
+    pdb.set_trace()
+    text = form['message'] + " -- " + form['host'] + " --from: " + form['email']
+    resp = requests.post(
+        "https://api.mailgun.net/v3/dimpull.com/messages",
+        auth=("api", MAILGUN_API_KEY),
+        data={"from": "Dimpull jon@dimpull.com",
+              "to": ["jonsandersss@gmail.com"],
+              "subject": "Availability Requested",
+              "text": text})
+    return "submitted"
+
+@cross_origin(headers=["Access-Control-Allow-Origin", "*"])
 @app.route('/availability/<dp>', methods=["GET"])
 def gettimeslots(dp):
     discussion_profile = DiscussionProfile.query.get(int(dp))
@@ -994,13 +1009,15 @@ def gettimeslots(dp):
             if not i.pending or (datetime.datetime.utcnow() - i.pending_time).total_seconds() / 60 > 16:
                 obj.append({'start': i.start_time.isoformat(), 'end': i.end_time.isoformat()})
     times=json.dumps(obj)
+    if len(obj) == 0:
+        times = "No availability"
     return times
 
 @cross_origin(headers=["Access-Control-Allow-Origin", "*"])
 @app.route('/walletandprice/<dp>', methods=["GET"])
 def getwallet(dp):
     discussion_profile = DiscussionProfile.query.get(int(dp))
-    obj = {'walletAddress': discussion_profile.walletAddress, 'price': round(discussion_profile.price * 1.18,2)}
+    obj = {'walletAddress': discussion_profile.walletAddress, 'price': (round(discussion_profile.price * 1.18,2)/2)}
     walletandprice = json.dumps(obj)
     return walletandprice
 
