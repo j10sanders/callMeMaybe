@@ -1017,7 +1017,10 @@ def gettimeslots(dp):
 @app.route('/walletandprice/<dp>', methods=["GET"])
 def getwallet(dp):
     discussion_profile = DiscussionProfile.query.get(int(dp))
-    obj = {'walletAddress': discussion_profile.walletAddress, 'price': (round(discussion_profile.price * 1.18,2)/2)}
+    price = round(discussion_profile.price * 1.18,2)/2
+    if discussion_profile.price > 80:
+        price = round(discussion_profile.price * 1.18,2) - 40
+    obj = {'walletAddress': discussion_profile.walletAddress, 'price': price}
     walletandprice = json.dumps(obj)
     return walletandprice
 
@@ -1186,7 +1189,7 @@ def _gather_outgoing_phone_number(incoming_phone_number, anonymous_phone_number)
     for i in conversations:
         if i.guest_phone_number == incoming_phone_number:
             conversation = i
-    if not conversation:
+    if conversation is not None:
         raise ValueError("Sorry, it looks like you are not booked for a call at this time.")
     # print("guest number: ", conversation.guest_phone_number, anonymous_phone_number)
     # if conversation.guest_phone_number == incoming_phone_number:

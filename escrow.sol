@@ -1,10 +1,8 @@
-pragma solidity ^0.4.17;
+pragma solidity ^0.4.13;
 
 contract Escrow {
   address public owner;
   uint public fee;
-
-  //Balances temporarily made public for testing; to be removed
   mapping (address =>  mapping (address => uint)) public balances;
 
   function Escrow() public {
@@ -16,7 +14,6 @@ contract Escrow {
     _;
   }
 
-  //Fee should be set in PPM
   function setFee(uint price) onlyOwner external {
     fee = price;
   }
