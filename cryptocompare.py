@@ -31,8 +31,9 @@ with open('escrow.sol', 'r') as f:
 		'outputSelection': {'*': {'*': ['metadata', 'evm.bytecode', 'abi', 'evm.opcodes']}}}
 	)
 
-escrow = w3.eth.contract(address='0x8850259566e9D03a1524E35687db2c78D4003409', abi=compiled_sol.get('contracts')['escrow.sol']['Escrow']['abi'])
-nonce = w3.eth.getTransactionCount('0x532DE4B689dD9DBDC9C9D2d51450487b09224CE8')
+dbAddress = w3.toChecksumAddress('0xfa4ac81d0cbc55e9f2cfe798f25e54ca378f8039')
+escrow = w3.eth.contract(address=dbAddress, abi=compiled_sol.get('contracts')['escrow.sol']['Escrow']['abi'])
+nonce = w3.eth.getTransactionCount('0x0Cd462db67F44191Caf3756f033A564A0d37cf08')
 
 payer = input("payer: ")
 payee = input("payee: ")
@@ -41,17 +42,17 @@ escrow_end = escrow.functions.end(
 		payer,
 		payee
 	).buildTransaction({
-		'from': '0x532DE4B689dD9DBDC9C9D2d51450487b09224CE8',
-		'chainId': 3,
+		'from': '0x0Cd462db67F44191Caf3756f033A564A0d37cf08',
+		'chainId': 1,
 		'gas': 970000,
-		'gasPrice': w3.toWei('1', 'gwei'),
+		'gasPrice': w3.toWei('10', 'gwei'),
 		'nonce': nonce,
 	})
 
 # escrow_end = escrow.functions.setFee(
 # 		18000
 # 	).buildTransaction({
-# 		'from': '0x532DE4B689dD9DBDC9C9D2d51450487b09224CE8',
+# 		'from': '0x0Cd462db67F44191Caf3756f033A564A0d37cf08',
 # 		'chainId': 3,
 # 		'gas': 70000,
 # 		'gasPrice': w3.toWei('1', 'gwei'),
@@ -59,14 +60,14 @@ escrow_end = escrow.functions.end(
 # 	})
 
 # escrow_end = escrow.functions.balances(
-# 		'0x532DE4B689dD9DBDC9C9D2d51450487b09224CE8',
+# 		'0x0Cd462db67F44191Caf3756f033A564A0d37cf08',
 # 		'0x07de4977770Df1f77d7D73141063c7085Bed716a'
-# 	).call({'from': '0x532DE4B689dD9DBDC9C9D2d51450487b09224CE8'})
+# 	).call({'from': '0x0Cd462db67F44191Caf3756f033A564A0d37cf08'})
 
 # escrow_end = escrow.functions.balances(
-# 		'0x532DE4B689dD9DBDC9C9D2d51450487b09224CE8',
+# 		'0x0Cd462db67F44191Caf3756f033A564A0d37cf08',
 # 		'0x07de4977770Df1f77d7D73141063c7085Bed716a'
-# 	).call({'from': '0x532DE4B689dD9DBDC9C9D2d51450487b09224CE8'})
+# 	).call({'from': '0x0Cd462db67F44191Caf3756f033A564A0d37cf08'})
 
 # print(escrow_end)
 private_key = input("private_key: ")
