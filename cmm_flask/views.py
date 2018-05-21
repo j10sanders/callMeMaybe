@@ -700,7 +700,8 @@ def host_timeslot(dpid):
     naive = newdate.replace(tzinfo=None)
     for slot in host.timeslots:
         if slot.start_time == naive:
-            if not slot.pending or (slot.pending_time - datetime.datetime.utcnow()).total_seconds() / 60 > 12.1:
+            if not slot.pending or (datetime.datetime.utcnow() - slot.pending_time).total_seconds() / 60 > 12.1:
+                print()
                 slot.pending = True
                 slot.pending_time = datetime.datetime.utcnow()
                 db.session.commit()

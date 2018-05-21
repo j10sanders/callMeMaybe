@@ -71,7 +71,7 @@ escrow_end = escrow.functions.setFee(
 
 pdb.set_trace();
 # print(escrow_end)
-private_key = '750d3e619c9c54a6e48d99b2bac5010b2c606509ceec7a470ac7158ef6dab384'
+private_key = ''
 
 
 w3.eth.enable_unaudited_features()
