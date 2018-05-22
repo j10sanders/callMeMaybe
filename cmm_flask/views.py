@@ -888,6 +888,16 @@ def savetimeslots():
             ) 
             db.session.add(timeslot)
             db.session.commit()
+
+        text = host.first_name + " " + host.last_name + " added availability"
+        respJon = requests.post(
+            "https://api.mailgun.net/v3/dimpull.com/messages",
+            auth=("api", MAILGUN_API_KEY),
+            data={"from": "Dimpull jon@dimpull.com",
+                  "to": ['jonsandersss@gmail.com'],
+                  "subject": text,
+                  "text": text})
+
         return 'success'
     return 'error'
 
