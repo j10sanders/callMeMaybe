@@ -966,7 +966,6 @@ def getmytimeslots():
     except AttributeError:
         user_id = "nope"
         return "not authenticated"
-
     host = User.query.filter(User.user_id == user_id).one()
     if host.accepted_terms is None or host.accepted_terms is False:
         return "terms"
@@ -974,10 +973,23 @@ def getmytimeslots():
     for i in host.timeslots:
         if datetime.datetime.now() < i.end_time:
             obj.append({'start': i.start_time.isoformat(), 'end': i.end_time.isoformat()})
-
     times=json.dumps(obj)
     return times
-    
+
+@cross_origin(headers=["Access-Control-Allow-Origin", "*"])
+@cross_origin(headers=["Content-Type", "Authorization"])
+@app.route('/checkTerms', methods=["GET"])
+def check_terms():
+    try:
+        user_id = get_user_id(request.headers.get("Authorization", None))
+    except AttributeError:
+        user_id = "nope"
+        return "not authenticated"
+    host = User.query.filter(User.user_id == user_id).one()
+    if host.accepted_terms is None or host.accepted_terms is False:
+        return "terms"
+    return "confirmed"
+
 @cross_origin(headers=["Access-Control-Allow-Origin", "*"])
 @cross_origin(headers=["Content-Type", "Authorization"])
 @app.route('/acceptTerms', methods=["POST"])
