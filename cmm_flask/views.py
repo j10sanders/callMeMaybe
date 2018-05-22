@@ -378,6 +378,8 @@ def discussions(home=None):
                 obj.append(_get_dps(ds)) 
     if home == 'home':
         obj = sorted(obj, key=lambda k: k['id']) #sort so hard coded front page is same order
+    else:
+        obj = sorted(obj, key=lambda k: k['timeslots'], reverse=True)
     objs=json.dumps(obj)
     return objs
 
@@ -393,7 +395,7 @@ def _get_dps(ds):
         averageRating = False
     obj = {'id': ds.id, 'url': ds.url, 'first_name': ds.host.first_name, 'last_name': ds.host.last_name, 
         'auth_pic': ds.host.auth_pic, 'image': ds.image_url, 'description': ds.description, 'who': ds.who, 'price': ds.price*1.18, 
-        'averageRating': averageRating
+        'averageRating': averageRating, 'timeslots': len(ds.host.timeslots)
     }
     return obj
 
@@ -700,7 +702,7 @@ def host_timeslot(dpid):
     naive = newdate.replace(tzinfo=None)
     for slot in host.timeslots:
         if slot.start_time == naive:
-            if not slot.pending or (datetime.datetime.utcnow() - slot.pending_time).total_seconds() / 60 > 12.1:
+            if not slot.pending or (datetime.datetime.utcnow() - slot.pending_time).total_seconds() / 60 > 30:
                 print()
                 slot.pending = True
                 slot.pending_time = datetime.datetime.utcnow()
@@ -847,7 +849,7 @@ def new_conversation(dpid):
         "https://api.mailgun.net/v3/dimpull.com/messages",
         auth=("api", MAILGUN_API_KEY),
         data={"from": "Jon jon@dimpull.com",
-              "to": [host.email],
+              "to": [hostEmail],
               "subject": "Someone Scheduled a Dimpull Call With You",
               "text": messageForHost},
         files=[("attachment", open('dimpull.ics'))])
@@ -1049,7 +1051,7 @@ def gettimeslots(dp):
     obj = []
     for i in host.timeslots:
         if datetime.datetime.now() < i.end_time:
-            if not i.pending or (datetime.datetime.utcnow() - i.pending_time).total_seconds() / 60 > 16:
+            if not i.pending or (datetime.datetime.utcnow() - i.pending_time).total_seconds() / 60 > 24:
                 obj.append({'start': i.start_time.isoformat(), 'end': i.end_time.isoformat()})
     times=json.dumps(obj)
     if len(obj) == 0:
@@ -1186,7 +1188,7 @@ def status_callback():
     conversations = dp.conversations
     conversation = None
     for i in conversations:
-        if (timestamp - i.start_time.replace(tzinfo = pytz.UTC)).total_seconds()/60 > -3 and (timestamp - i.start_time.replace(tzinfo = pytz.UTC)).total_seconds()/60 < 30:
+        if (timestamp - i.start_time.replace(tzinfo = pytz.UTC)).total_seconds()/60 > -3 and (timestamp - i.start_time.replace(tzinfo = pytz.UTC)).total_seconds()/60 < 24:
             conversation = i
             try: 
                 t = conversation.caller_sid
