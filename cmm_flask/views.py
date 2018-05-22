@@ -966,7 +966,10 @@ def getmytimeslots():
     except AttributeError:
         user_id = "nope"
         return "not authenticated"
+
     host = User.query.filter(User.user_id == user_id).one()
+    if host.accepted_terms is None or host.accepted_terms is False:
+        return "terms"
     obj = []
     for i in host.timeslots:
         if datetime.datetime.now() < i.end_time:
@@ -974,6 +977,23 @@ def getmytimeslots():
 
     times=json.dumps(obj)
     return times
+    
+@cross_origin(headers=["Access-Control-Allow-Origin", "*"])
+@cross_origin(headers=["Content-Type", "Authorization"])
+@app.route('/acceptTerms', methods=["POST"])
+def accept_terms():
+    form=request.get_json()
+    if form['accepted']:
+        try:
+            user_id = get_user_id(request.headers.get("Authorization", None))
+        except AttributeError:
+            user_id = "nope"
+            return "not authenticated"
+        host = User.query.filter(User.user_id == user_id).one()
+        host.accepted_terms = True
+        db.session.commit()
+        return "confirmed"
+    return "error"
 
 @cross_origin(headers=["Access-Control-Allow-Origin", "*"])
 @app.route('/addemail', methods=["POST"])
@@ -1174,7 +1194,7 @@ def status_callback():
                 "https://api.mailgun.net/v3/dimpull.com/messages",
                 auth=("api", MAILGUN_API_KEY),
                 data={"from": "Dimpull jon@dimpull.com",
-                      "to": [conversation.guest_email],
+                      "to": ['jonsandersss@gmail.com'],
                       "subject": "Call just happened!",
                       "text": callDetails})
             return 'success'

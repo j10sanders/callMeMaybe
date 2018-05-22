@@ -26,6 +26,7 @@ class User(db.Model):
     requestExpert = db.Column(db.Boolean, nullable=True, default=False)
     messageforAdmins = db.Column(db.String, nullable=True, default='')
     email = db.Column(db.String, nullable=True)
+    accepted_terms = db.Column(db.Boolean, nullable=True, default=False)
 
     def is_authenticated(self):
         return True

@@ -7,7 +7,7 @@ from solc.wrapper import get_solc_binary_path
 import os
 # import escrow.sol
 
-provider = HTTPProvider('https://ropsten.infura.io/SzMj9kYHCc61XSf9IFDh')
+provider = HTTPProvider('https://mainnet.infura.io/nymbljHPRamRw5ArzSGB')
 w3 = Web3(provider)
 
 assert w3.isConnected()
@@ -32,11 +32,15 @@ with open('escrow.sol', 'r') as f:
 	)
 
 dbAddress = w3.toChecksumAddress('0xfa4ac81d0cbc55e9f2cfe798f25e54ca378f8039')
+print(dbAddress)
 escrow = w3.eth.contract(address=dbAddress, abi=compiled_sol.get('contracts')['escrow.sol']['Escrow']['abi'])
 nonce = w3.eth.getTransactionCount('0x0Cd462db67F44191Caf3756f033A564A0d37cf08')
 
 payer = input("payer: ")
 payee = input("payee: ")
+
+payer = w3.toChecksumAddress(payer)
+payee = w3.toChecksumAddress(payee)
 
 escrow_end = escrow.functions.end(
 		payer,
