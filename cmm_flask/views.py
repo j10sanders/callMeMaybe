@@ -597,7 +597,7 @@ def get_users_url():
         return '404'
     if User.query.filter(User.user_id == user_id).count() > 0:
         user = User.query.filter(User.user_id == user_id).one()
-        url = {'url': user.discussion_profiles[0].url, 'referral': user.referrals[0].code, 'vip': user.discussion_profiles[0].vipid}
+        url = {'url': user.discussion_profiles[0].url, 'referral': user.referrals[0].code, 'vip': user.discussion_profiles[0].vipid, 'expert': user.expert}
         obj = json.dumps(url)
         return obj
     return '404'
