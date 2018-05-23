@@ -625,6 +625,11 @@ def edit_discussion(url=None):
         dp = user.discussion_profiles[0]
     if request.method == 'POST':
         form=request.get_json()
+        price = form['price']
+        try:
+            int(price[0])
+        except ValueError:
+            price = price[1:]
         if dp.host.user_id == form['user_id']:
             dp.vipid = _make_random_id(review=False)
             dp.public = form['submitFull']
@@ -632,7 +637,7 @@ def edit_discussion(url=None):
             dp.description = form['description']
             dp.image_url = form['image_url']
             # dp.otherProfile = form['otherProfile'],
-            dp.price = float(form['price'])
+            dp.price = float(price)
             dp.timezone = form['timezone']
             dp.who = form['who']
             dp.excites = form['excites']
