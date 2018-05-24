@@ -379,7 +379,7 @@ def discussions(home=None):
     if home == 'home':
         obj = sorted(obj, key=lambda k: k['id']) #sort so hard coded front page is same order
     else:
-        obj = sorted(obj, key=lambda k: k['timeslots'], reverse=True)
+        obj = sorted(obj, key=lambda k: k['timeslots']>0, reverse=True)
     objs=json.dumps(obj)
     return objs
 
