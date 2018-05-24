@@ -708,12 +708,28 @@ def host_timeslot(dpid):
     for slot in host.timeslots:
         if slot.start_time == naive:
             if not slot.pending or (datetime.datetime.utcnow() - slot.pending_time).total_seconds() / 60 > 30:
-                print()
                 slot.pending = True
                 slot.pending_time = datetime.datetime.utcnow()
                 db.session.commit()
                 return "added pending"
             return "currently pending"
+    return "error"
+
+@cross_origin(headers=["Access-Control-Allow-Origin", "*"])
+@cross_origin(headers=["Content-Type", "Authorization"])
+@app.route('/addpending/<dpid>', methods=["POST"])
+def add_pending(dpid):
+    form=request.get_json()
+    discussion_profile = DiscussionProfile.query.get(int(dpid))
+    time = form['start_time']
+    host = discussion_profile.host
+    newdate = dateutil.parser.parse(time)
+    naive = newdate.replace(tzinfo=None)
+    for slot in host.timeslots:
+        if slot.start_time == naive:
+            slot.pending_time = datetime.datetime.utcnow()
+            db.session.commit()
+            return "added pending"
     return "error"
 
 @cross_origin(headers=["Access-Control-Allow-Origin", "*"])
