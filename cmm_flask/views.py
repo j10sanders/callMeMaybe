@@ -1053,7 +1053,6 @@ def addemail():
 @app.route('/requestavailability', methods=["POST"])
 def requestavailability():
     form=request.get_json()
-    pdb.set_trace()
     text = form['message'] + " -- " + form['host'] + " --from: " + form['email']
     resp = requests.post(
         "https://api.mailgun.net/v3/dimpull.com/messages",
