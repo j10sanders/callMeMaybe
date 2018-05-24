@@ -604,6 +604,25 @@ def get_users_url():
         return obj
     return '404'
 
+
+@app.route('/newvip', methods=["GET"])
+@cross_origin(headers=["Content-Type", "Authorization"])
+@cross_origin(headers=["Access-Control-Allow-Origin", "*"])
+def new_vip():
+    try:
+        user_id = get_user_id(request.headers.get("Authorization", None))
+    except AttributeError:
+        user_id = "nope"
+    if User.query.filter(User.user_id == user_id).count() > 0:
+        user = User.query.filter(User.user_id == user_id).one()
+    else:
+        return '404'
+    dp = user.discussion_profiles[0]
+    dp.vipid = _make_random_id(review=False)
+    db.session.commit()
+    obj = obj = json.dumps({'vipid': dp.vipid})
+    return obj
+
 @app.route('/editProfile', methods=["GET", "POST"])
 @app.route('/editProfile/<url>', methods=["GET", "POST"])
 @cross_origin(headers=["Content-Type", "Authorization"])
@@ -1070,9 +1089,12 @@ def gettimeslots(dp):
     host = discussion_profile.host
     obj = []
     for i in host.timeslots:
-        if datetime.datetime.now() < i.end_time:
+        if datetime.datetime.utcnow() < i.start_time:
             if not i.pending or (datetime.datetime.utcnow() - i.pending_time).total_seconds() / 60 > 24:
                 obj.append({'start': i.start_time.isoformat(), 'end': i.end_time.isoformat()})
+        else:
+            db.session.delete(i)
+            db.session.commit()
     times=json.dumps(obj)
     if len(obj) == 0:
         times = "No availability"
