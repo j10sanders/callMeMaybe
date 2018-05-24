@@ -320,7 +320,7 @@ def register(user_id="nope", tel=None, email=None):
             "https://api.mailgun.net/v3/dimpull.com/messages",
             auth=("api", MAILGUN_API_KEY),
             data={"from": "Jon jon@dimpull.com",
-                  "to": ["jonsandersss@gmail.com", "jonsandersss@gmail.com"],
+                  "to": ["admin@dimpull.com"],
                   "subject": "Someone registered",
                   "text": form['first_name'] + " " + form['last_name']})
         db.session.add(user)
@@ -343,7 +343,7 @@ def senderror():
             "https://api.mailgun.net/v3/dimpull.com/messages",
             auth=("api", MAILGUN_API_KEY),
             data={"from": "Jon jon@dimpull.com",
-                  "to": ["jonsandersss@gmail.com", "jonsandersss@gmail.com"],
+                  "to": ["admin@dimpull.com"],
                   "subject": "Someone had an error making a profile",
                   "text": form['err'] + " " + form['email']})
     return
@@ -654,7 +654,7 @@ def edit_discussion(url=None):
                 "https://api.mailgun.net/v3/dimpull.com/messages",
                 auth=("api", MAILGUN_API_KEY),
                 data={"from": "Jon jon@dimpull.com",
-                      "to": ["jonsandersss@gmail.com", "jonsandersss@gmail.com"],
+                      "to": ["admin@dimpull.com"],
                       "subject": "Someone edited their profile",
                       "text": url})
             return 'success'
@@ -797,7 +797,7 @@ def _refund(conversation, host):
         "https://api.mailgun.net/v3/dimpull.com/messages",
         auth=("api", MAILGUN_API_KEY),
         data={"from": "Jon jon@dimpull.com",
-              "to": ["jonsandersss@gmail.com"],
+              "to": ["admin@dimpull.com"],
               "subject": "We are sorry - your Dimpull call was cancelled.",
               "text": messageForCaller}
         )
@@ -886,7 +886,7 @@ def new_conversation(dpid):
         "https://api.mailgun.net/v3/dimpull.com/messages",
         auth=("api", MAILGUN_API_KEY),
         data={"from": "Jon jon@dimpull.com",
-              "to": ["jonsandersss@gmail.com"],
+              "to": ["admin@dimpull.com"],
               "subject": "You scheduled a call",
               "text": messageForCaller},
         files=[("attachment", open('dimpull.ics'))])
@@ -917,7 +917,7 @@ def savetimeslots():
             "https://api.mailgun.net/v3/dimpull.com/messages",
             auth=("api", MAILGUN_API_KEY),
             data={"from": "Dimpull jon@dimpull.com",
-                  "to": ['jonsandersss@gmail.com'],
+                  "to": ['admin@dimpull.com'],
                   "subject": text,
                   "text": text})
 
@@ -1058,7 +1058,7 @@ def requestavailability():
         "https://api.mailgun.net/v3/dimpull.com/messages",
         auth=("api", MAILGUN_API_KEY),
         data={"from": "Dimpull jon@dimpull.com",
-              "to": ["jonsandersss@gmail.com"],
+              "to": ["admin@dimpull.com"],
               "subject": "Availability Requested",
               "text": text})
     return "submitted"
@@ -1238,7 +1238,7 @@ def status_callback():
                 "https://api.mailgun.net/v3/dimpull.com/messages",
                 auth=("api", MAILGUN_API_KEY),
                 data={"from": "Dimpull jon@dimpull.com",
-                      "to": ['jonsandersss@gmail.com'],
+                      "to": ['admin@dimpull.com'],
                       "subject": "Call just happened!",
                       "text": callDetails})
             return 'success'
