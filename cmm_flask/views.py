@@ -647,6 +647,8 @@ def edit_discussion(url=None):
         price = form['price']
         try:
             int(price[0])
+        except TypeError:
+            price = price
         except ValueError:
             price = price[1:]
         if dp.host.user_id == form['user_id']:
@@ -884,7 +886,6 @@ def new_conversation(dpid):
 
     messageForHost = "Calendar invite attached.  Message from caller: '" + form['message'] + "' --- They will show up in your Caller ID as calling from: " + anonymous_phone_number + "."
     messageForCaller = "Calendar invite attached.  This is the message you sent to " + host.first_name + " " + host.last_name + ": '" + form['message'] + "' --- The number to call " + host.first_name + " at is: " + anonymous_phone_number + "."
-
     hostResp = requests.post(
         "https://api.mailgun.net/v3/dimpull.com/messages",
         auth=("api", MAILGUN_API_KEY),
@@ -906,7 +907,7 @@ def new_conversation(dpid):
         auth=("api", MAILGUN_API_KEY),
         data={"from": "Jon jon@dimpull.com",
               "to": ["admin@dimpull.com"],
-              "subject": "You scheduled a call",
+              "subject": form['transactionStatus'],
               "text": messageForCaller},
         files=[("attachment", open('dimpull.ics'))])
     obj = {'anonymous_phone_number': anonymous_phone_number, 'whitelisted': True, 'hostFirstName': host.first_name}
