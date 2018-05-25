@@ -1105,9 +1105,7 @@ def gettimeslots(dp):
 @app.route('/walletandprice/<dp>', methods=["GET"])
 def getwallet(dp):
     discussion_profile = DiscussionProfile.query.get(int(dp))
-    price = round(discussion_profile.price * 1.18,2)/2
-    if discussion_profile.price > 80:
-        price = round(discussion_profile.price * 1.18,2) - 40
+    price = round(discussion_profile.price * 1.18,2)
     obj = {'walletAddress': discussion_profile.walletAddress, 'price': price}
     walletandprice = json.dumps(obj)
     return walletandprice
