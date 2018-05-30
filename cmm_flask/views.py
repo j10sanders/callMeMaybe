@@ -454,7 +454,7 @@ def discussion_profile(url):
             is_users = True
             if not dp.price:
                 return 'editProfile'
-        who, excites, helps, origin, linkedin, medium, github, twitter = '', '', '', '', '', '', '', ''
+        who, excites, helps, origin, linkedin, medium, github, twitter, youtube= '', '', '', '', '', '', '', '', ''
         if dp.who:
             who = dp.who
         if dp.excites:
@@ -465,6 +465,8 @@ def discussion_profile(url):
             helps = dp.helps
         if dp.twitter:
             twitter = dp.twitter
+        if dp.youtube:
+            youtube = dp.youtube
         if dp.linkedin:
             linkedin = dp.linkedin
         if dp.github:
@@ -475,7 +477,7 @@ def discussion_profile(url):
             'anonymous_phone_number': dp.anonymous_phone_number, 'auth_pic': dp.host.auth_pic, 'first_name':dp.host.first_name, 
             'last_name':dp.host.last_name, 'is_users': is_users, 'price': dp.price*1.18, 'otherProfile': dp.otherProfile, 'who': who,
             'origin': dp.origin, 'excites': dp.excites, 'helps': dp.helps, 'url': dp.url, 'id': dp.id, 'linkedin': linkedin,
-            'github': github, 'medium': medium, 'twitter': twitter
+            'github': github, 'medium': medium, 'twitter': twitter, 'youtube': youtube
         }
         reviews = []
         ratings = []
@@ -670,6 +672,7 @@ def edit_discussion(url=None):
             dp.linkedin = form['linkedin']
             dp.medium = form['medium']
             dp.twitter = form['twitter']
+            dp.youtube = form['youtube']
             dp.github = form['github']
             db.session.commit()
             resp = requests.post(
@@ -689,7 +692,7 @@ def edit_discussion(url=None):
         if dp.host.user_id != user_id and user_id != 'twitter|971512359889010688':
             return "Not this user's"
 
-        who, excites, helps, origin, url, walletAddress, linkedin, medium, twitter, github = '', '', '', '', '', '', '', '', '', ''
+        who, excites, helps, origin, url, walletAddress, linkedin, medium, twitter, github, youtube = '', '', '', '', '', '', '', '', '', '', ''
         if dp.who:
             who = dp.who
         if dp.excites:
@@ -704,6 +707,8 @@ def edit_discussion(url=None):
             walletAddress = dp.walletAddress
         if dp.twitter:
             twitter = dp.twitter
+        if dp.youtube:
+            youtube = dp.youtube
         if dp.linkedin:
             linkedin = dp.linkedin
         if dp.github:
@@ -712,7 +717,7 @@ def edit_discussion(url=None):
             medium = dp.medium 
         return jsonify({'description': dp.description, 'image_url': dp.image_url, 'price': dp.price, 'otherProfile': dp.otherProfile, 
             'timezone': dp.timezone, 'who': who, 'excites': excites, 'origin': origin, "helps": helps, 'url': url,
-            'walletAddress': walletAddress, 'github': github, 'linkedin': linkedin, 'medium': medium, 'twitter': twitter,
+            'walletAddress': walletAddress, 'github': github, 'linkedin': linkedin, 'medium': medium, 'twitter': twitter, 'youtube': youtube,
             'first_name': dp.host.first_name, 'last_name': dp.host.last_name})
     return "error"
 

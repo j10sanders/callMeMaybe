@@ -28,6 +28,7 @@ class DiscussionProfile(db.Model):
     walletAddress = db.Column(db.String, nullable=True)
     medium = db.Column(db.String, nullable=True)
     twitter = db.Column(db.String, nullable=True)
+    youtube = db.Column(db.String, nullable=True)
     linkedin = db.Column(db.String, nullable=True)
     github = db.Column(db.String, nullable=True)
     vipid = db.Column(db.String, nullable=True)

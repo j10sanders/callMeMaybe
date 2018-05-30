@@ -38,6 +38,7 @@ nonce = w3.eth.getTransactionCount('0x0Cd462db67F44191Caf3756f033A564A0d37cf08')
 
 payer = input("payer: ")
 payee = input("payee: ")
+gas = input("gas: ")
 
 payer = w3.toChecksumAddress(payer)
 payee = w3.toChecksumAddress(payee)
@@ -49,7 +50,7 @@ escrow_end = escrow.functions.end(
 		'from': '0x0Cd462db67F44191Caf3756f033A564A0d37cf08',
 		'chainId': 1,
 		'gas': 970000,
-		'gasPrice': w3.toWei('10', 'gwei'),
+		'gasPrice': w3.toWei(gas, 'gwei'),
 		'nonce': nonce,
 	})
 
