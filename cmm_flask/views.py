@@ -936,8 +936,7 @@ def savetimeslots():
                 host = host,
             ) 
             db.session.add(timeslot)
-            db.session.commit()
-
+        db.session.commit()
         text = host.first_name + " " + host.last_name + " added availability"
         respJon = requests.post(
             "https://api.mailgun.net/v3/dimpull.com/messages",
@@ -1095,10 +1094,13 @@ def gettimeslots(dp):
     discussion_profile = DiscussionProfile.query.get(int(dp))
     host = discussion_profile.host
     obj = []
+    start_times = []
     for i in host.timeslots:
         if datetime.datetime.utcnow() < i.start_time:
             if not i.pending or (datetime.datetime.utcnow() - i.pending_time).total_seconds() / 60 > 24:
-                obj.append({'start': i.start_time.isoformat(), 'end': i.end_time.isoformat()})
+                if i.start_time.isoformat() not in start_times:
+                    obj.append({'start': i.start_time.isoformat(), 'end': i.end_time.isoformat()})
+                    start_times.append(i.start_time.isoformat())
         else:
             db.session.delete(i)
             db.session.commit()
