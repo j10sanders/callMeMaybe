@@ -1098,12 +1098,14 @@ def gettimeslots(dp):
     for i in host.timeslots:
         if datetime.datetime.utcnow() < i.start_time:
             if not i.pending or (datetime.datetime.utcnow() - i.pending_time).total_seconds() / 60 > 24:
-                if i.start_time.isoformat() not in start_times:
+                if i.start_time.isoformat() in start_times:
+                    db.session.delete(i)
+                else:
                     obj.append({'start': i.start_time.isoformat(), 'end': i.end_time.isoformat()})
                     start_times.append(i.start_time.isoformat())
         else:
             db.session.delete(i)
-            db.session.commit()
+    db.session.commit()
     times=json.dumps(obj)
     if len(obj) == 0:
         times = "No availability"
