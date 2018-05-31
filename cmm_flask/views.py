@@ -675,13 +675,14 @@ def edit_discussion(url=None):
             dp.youtube = form['youtube']
             dp.github = form['github']
             db.session.commit()
+            link = form['url'].lower() + ": " + 'https://cm-m.herokuapp.com/admin/discussionprofile/edit/?id=' + str(dp.id)
             resp = requests.post(
                 "https://api.mailgun.net/v3/dimpull.com/messages",
                 auth=("api", MAILGUN_API_KEY),
                 data={"from": "Jon jon@dimpull.com",
                       "to": ["admin@dimpull.com"],
                       "subject": "Someone edited their profile",
-                      "text": url})
+                      "text": link})
             return 'success'
         else: 
             return "wrong user"
