@@ -399,27 +399,6 @@ def _get_dps(ds):
     }
     return obj
 
-@app.route('/api/mydiscussions', methods=["GET"])
-@cross_origin(headers=["Content-Type", "Authorization"])
-def mydiscussions():
-    try:
-        user_id = get_user_id(request.headers.get("Authorization", None))
-    except AttributeError:
-        user_id = "nope"
-    host = User.query.filter(User.user_id == user_id).one()
-    dps = host.discussion_profiles
-    if len(dps) > 0:
-        obj = []
-        for ds in dps:
-            obj.append({'id':ds.id, 'url': ds.url, 'first_name': ds.host.first_name, 'last_name': ds.host.last_name, 
-                'auth_pic': ds.host.auth_pic, 'image':ds.image_url, 'description': ds.description,
-                })
-        objs=json.dumps(obj)
-        return objs
-    else:
-        return "user has no discussion profiles"
-    return "error"
-
 def url_to_dp(url):
     url = url.lower()
     try:
