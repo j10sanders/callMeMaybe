@@ -604,6 +604,69 @@ def new_vip():
     obj = obj = json.dumps({'vipid': dp.vipid})
     return obj
 
+@cross_origin(headers=["Access-Control-Allow-Origin", "*"])
+@cross_origin(headers=["Content-Type", "Authorization"])
+@app.route('/api/savetimeslots', methods=["POST"])
+@app.route('/api/savetimeslots/<url>', methods=["POST"])
+def savetimeslots(url=None):
+    user_id = get_user_id(request.headers.get("Authorization", None))
+    form=request.get_json()
+    if request.method == 'POST':
+        host = User.query.filter(User.user_id == user_id).one()
+        if url and user_id == 'twitter|971512359889010688':
+            dp = url_to_dp(url)
+            if dp == '404':
+                return '404'
+            host = dp.host
+        times = form['times']
+        # Remove old timeslots in case the user deleted any.
+        db.session.query(TimeSlot).filter_by(host = host).delete() 
+        for i in times:
+            timeslot = TimeSlot(
+                start_time = i['start'],
+                end_time = i['end'],
+                host = host,
+            ) 
+            db.session.add(timeslot)
+        db.session.commit()
+        text = host.first_name + " " + host.last_name + " added availability"
+        respJon = requests.post(
+            "https://api.mailgun.net/v3/dimpull.com/messages",
+            auth=("api", MAILGUN_API_KEY),
+            data={"from": "Dimpull jon@dimpull.com",
+                  "to": ['admin@dimpull.com'],
+                  "subject": text,
+                  "text": text})
+
+        return 'success'
+    return 'error'
+
+@cross_origin(headers=["Access-Control-Allow-Origin", "*"])
+@cross_origin(headers=["Content-Type", "Authorization"])
+@app.route('/api/getmytimeslots', methods=["GET"])
+@app.route('/api/getmytimeslots/<url>', methods=["GET"])
+def getmytimeslots(url=None):
+    try:
+        user_id = get_user_id(request.headers.get("Authorization", None))
+    except AttributeError:
+        user_id = "nope"
+        return "not authenticated"
+    host = User.query.filter(User.user_id == user_id).one()
+    if url and user_id == 'twitter|971512359889010688':
+        dp = url_to_dp(url)
+        if dp == '404':
+            return '404'
+        host = dp.host
+    if host.accepted_terms is None or host.accepted_terms is False:
+        return "terms"
+    obj = []
+    for i in host.timeslots:
+        if datetime.datetime.now() < i.end_time:
+            obj.append({'start': i.start_time.isoformat(), 'end': i.end_time.isoformat()})
+    times=json.dumps(obj)
+    return times
+
+
 @app.route('/editProfile', methods=["GET", "POST"])
 @app.route('/editProfile/<url>', methods=["GET", "POST"])
 @cross_origin(headers=["Content-Type", "Authorization"])
@@ -639,7 +702,6 @@ def edit_discussion(url=None):
             dp.submitFull = form['submitFull']
             dp.description = form['description']
             dp.image_url = form['image_url']
-            # dp.otherProfile = form['otherProfile'],
             dp.price = float(price)
             dp.timezone = form['timezone']
             dp.who = form['who']
@@ -900,35 +962,6 @@ def new_conversation(dpid):
     return obj
 
 @cross_origin(headers=["Access-Control-Allow-Origin", "*"])
-@app.route('/api/savetimeslots', methods=["POST"])
-def savetimeslots():
-    form=request.get_json()
-    if request.method == 'POST':
-        host = User.query.filter(User.user_id == form['user_id']).one()
-        times = form['times']
-        # Remove old timeslots in case the user deleted any.
-        db.session.query(TimeSlot).filter_by(host = host).delete() 
-        for i in times:
-            timeslot = TimeSlot(
-                start_time = i['start'],
-                end_time = i['end'],
-                host = host,
-            ) 
-            db.session.add(timeslot)
-        db.session.commit()
-        text = host.first_name + " " + host.last_name + " added availability"
-        respJon = requests.post(
-            "https://api.mailgun.net/v3/dimpull.com/messages",
-            auth=("api", MAILGUN_API_KEY),
-            data={"from": "Dimpull jon@dimpull.com",
-                  "to": ['admin@dimpull.com'],
-                  "subject": text,
-                  "text": text})
-
-        return 'success'
-    return 'error'
-
-@cross_origin(headers=["Access-Control-Allow-Origin", "*"])
 @cross_origin(headers=["Content-Type", "Authorization"])
 @app.route('/submitreview', methods=["POST"])
 def submitreview():
@@ -993,25 +1026,6 @@ def need_review(host, user_id):
         .filter(Conversation.status == 'confirmed', Conversation.discussion_profile.has(host = host), Conversation.guest.has(user_id = user_id), Conversation.reviewed == False, Conversation.start_time < datetime.datetime.utcnow()) \
         .all()
     return conversation
-
-@cross_origin(headers=["Access-Control-Allow-Origin", "*"])
-@cross_origin(headers=["Content-Type", "Authorization"])
-@app.route('/api/getmytimeslots', methods=["GET"])
-def getmytimeslots():
-    try:
-        user_id = get_user_id(request.headers.get("Authorization", None))
-    except AttributeError:
-        user_id = "nope"
-        return "not authenticated"
-    host = User.query.filter(User.user_id == user_id).one()
-    if host.accepted_terms is None or host.accepted_terms is False:
-        return "terms"
-    obj = []
-    for i in host.timeslots:
-        if datetime.datetime.now() < i.end_time:
-            obj.append({'start': i.start_time.isoformat(), 'end': i.end_time.isoformat()})
-    times=json.dumps(obj)
-    return times
 
 @cross_origin(headers=["Access-Control-Allow-Origin", "*"])
 @cross_origin(headers=["Content-Type", "Authorization"])
