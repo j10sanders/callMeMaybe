@@ -617,7 +617,7 @@ def edit_discussion(url=None):
         user = User.query.filter(User.user_id == user_id).one()
     else:
         return '404'
-    if url:
+    if url and user_id == 'twitter|971512359889010688':
         dp = url_to_dp(url)
         if dp == '404':
             return '404'
