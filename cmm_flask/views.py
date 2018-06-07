@@ -715,6 +715,7 @@ def edit_discussion(url=None):
             dp.twitter = form['twitter']
             dp.youtube = form['youtube']
             dp.github = form['github']
+            dp.host.phone_number = form['phone_number']
             db.session.commit()
             link = form['url'].lower() + ": " + 'https://cm-m.herokuapp.com/admin/discussionprofile/edit/?id=' + str(dp.id)
             resp = requests.post(
@@ -756,11 +757,11 @@ def edit_discussion(url=None):
         if dp.github:
             github = dp.github
         if dp.medium:
-            medium = dp.medium 
+            medium = dp.medium
         return jsonify({'description': dp.description, 'image_url': dp.image_url, 'price': dp.price, 'otherProfile': dp.otherProfile, 
             'timezone': dp.timezone, 'who': who, 'excites': excites, 'origin': origin, "helps": helps, 'url': url,
             'walletAddress': walletAddress, 'github': github, 'linkedin': linkedin, 'medium': medium, 'twitter': twitter, 'youtube': youtube,
-            'first_name': dp.host.first_name, 'last_name': dp.host.last_name})
+            'first_name': dp.host.first_name, 'last_name': dp.host.last_name, 'phone_number': dp.host.phone_number})
     return "error"
 
 @cross_origin(headers=["Access-Control-Allow-Origin", "*"])
