@@ -696,6 +696,11 @@ def edit_discussion(url=None):
         except ValueError:
             price = price[1:]
 
+        try:
+            phone_number = form['phone_number']
+        except KeyError:
+            phone_number = ''
+
         if dp.host.user_id == form['user_id'] or user_id == 'twitter|971512359889010688':
             dp.vipid = _make_random_id(review=False)
             dp.public = form['submitFull']
@@ -715,7 +720,7 @@ def edit_discussion(url=None):
             dp.twitter = form['twitter']
             dp.youtube = form['youtube']
             dp.github = form['github']
-            dp.host.phone_number = form['phone_number']
+            dp.host.phone_number = phone_number
             db.session.commit()
             link = form['url'].lower() + ": " + 'https://cm-m.herokuapp.com/admin/discussionprofile/edit/?id=' + str(dp.id)
             resp = requests.post(
