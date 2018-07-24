@@ -270,6 +270,10 @@ def get_user_id(t):
 @cross_origin(headers=["Content-Type", "Authorization"])
 @cross_origin(headers=["Access-Control-Allow-Origin", "*"])
 def register(user_id="nope", tel=None, email=None):
+    try:
+        user_id = get_user_id(request.headers.get("Authorization", None))
+    except AttributeError:
+        user_id = "nope"
     if tel is not None: #this is a user who is requesting a call
         user = User(
             user_id=user_id,
@@ -285,11 +289,7 @@ def register(user_id="nope", tel=None, email=None):
         db.session.commit()
         return 'ok'
         # TODO deal with users who request to be an expert after making a call
-
-    try:
-        user_id = get_user_id(request.headers.get("Authorization", None))
-    except AttributeError:
-        user_id = "nope"
+    
     form=request.get_json()
     if request.method != 'GET': #Options is sent locally, instead of post
         if "phone_number" in form:
