@@ -27,7 +27,7 @@ ics==0.3.1
 idna==2.6
 ipaddress==1.0.18
 itsdangerous==0.24
-Jinja2==2.8
+Jinja2==2.11.3
 linecache2==1.0.0
 Mako==1.0.3
 MarkupSafe==0.23
